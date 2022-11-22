@@ -1,6 +1,8 @@
 package com.rubber.at.tennis.atp.web;
 
+import com.rubber.at.tennis.atp.api.base.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
+import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDetail;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;
 import com.rubber.at.tennis.atp.service.player.PlayerInfoQueryService;
 import com.rubber.base.components.util.result.page.ResultPage;
@@ -29,6 +31,12 @@ class RubberAtTennisAtpWebApplicationTests {
 
 
         ResultPage<PlayerInfoDto> playerInfoDtoResultPage = playerInfoQueryService.queryWtaInfoPage(searchQueryRequest);
+
+        PlayerIdRequest playerIdRequest = new PlayerIdRequest();
+        playerIdRequest.setPlayerId("Z272");
+
+        PlayerInfoDetail playerDetail = playerInfoQueryService.getPlayerDetail(playerIdRequest);
+
 
         System.out.println();
 

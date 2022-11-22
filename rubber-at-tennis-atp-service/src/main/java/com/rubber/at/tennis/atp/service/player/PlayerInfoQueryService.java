@@ -4,25 +4,25 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.rubber.at.tennis.atp.api.base.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.api.player.PlayerInfoQueryApi;
+import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDetail;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;
 import com.rubber.at.tennis.atp.api.player.enums.PlayerTypeEnums;
 import com.rubber.at.tennis.atp.api.rank.dto.PlayerRankInfoDto;
 import com.rubber.at.tennis.atp.api.task.TaskTypeEnums;
 import com.rubber.at.tennis.atp.dao.dal.IPlayerInfoDal;
-import com.rubber.at.tennis.atp.dao.dal.IPlayerRankInfoDal;
 import com.rubber.at.tennis.atp.dao.entity.PlayerInfoEntity;
 import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
-import com.rubber.at.tennis.atp.dao.entity.TaskInfoEntity;
+import com.rubber.at.tennis.atp.service.common.exception.ErrorCodeEnums;
+import com.rubber.at.tennis.atp.service.common.exception.RubberServiceException;
 import com.rubber.at.tennis.atp.service.rank.PlayerRankInfoService;
-import com.rubber.at.tennis.atp.service.task.TaskQueryService;
 import com.rubber.base.components.util.result.page.ResultPage;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +59,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
             nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.ATP_RANK);
         }
-        return convertDto(page,nowPlayerRank);
+        return convertDtoBatch(page,nowPlayerRank);
 
     }
 
@@ -79,7 +79,53 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
             nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.WTA_RANK);
         }
-        return convertDto(page,nowPlayerRank);
+        return convertDtoBatch(page,nowPlayerRank);
+    }
+
+    /**
+     * 球员的基本信息
+     *
+     * @param playerIdRequest 球员id
+     * @return 返回球员的基本信息
+     */
+    @Override
+    public PlayerInfoDetail getPlayerDetail(PlayerIdRequest playerIdRequest) {
+        // 球员信息
+        PlayerInfoEntity playerInfoEntity = getByPlayerId(playerIdRequest.getPlayerId());
+        if (playerInfoEntity == null){
+            throw new RubberServiceException(ErrorCodeEnums.PLAYER_NOT_EXIST);
+        }
+
+        // 结果集合
+        PlayerInfoDetail playerInfoDetail = new PlayerInfoDetail();
+        BeanUtils.copyProperties(playerInfoEntity,playerInfoDetail);
+
+        TaskTypeEnums taskTypeEnums = TaskTypeEnums.ATP_RANK;
+        if (PlayerTypeEnums.wta.toString().equals(playerInfoEntity.getPlayerType())){
+            taskTypeEnums = TaskTypeEnums.WTA_RANK;
+        }
+        // 查询本周排名
+        PlayerRankInfoEntity newRank = playerRankInfoService.getPlayerNewRank(playerIdRequest.getPlayerId(),taskTypeEnums);
+        if (newRank != null){
+
+            PlayerRankInfoDto rankInfoDto = new PlayerRankInfoDto();
+            BeanUtils.copyProperties(newRank,rankInfoDto);
+            playerInfoDetail.setWeekRankInfo(rankInfoDto);
+
+            // 查询历史信息
+            List<PlayerRankInfoEntity> oldRankList = playerRankInfoService.queryAllRankByPlayerId(playerIdRequest.getPlayerId());
+            if (CollUtil.isNotEmpty(oldRankList)){
+                playerInfoDetail.setOldRankList(
+                    oldRankList.stream().map(i->{
+                        PlayerRankInfoDto dto = new PlayerRankInfoDto();
+                        BeanUtils.copyProperties(i,dto);
+                        return dto;
+                    }).collect(Collectors.toList())
+                );
+            }
+
+        }
+        return playerInfoDetail;
     }
 
 
@@ -107,12 +153,22 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
 
 
     /**
+     * 查询单个球员信息
+     */
+    private PlayerInfoEntity getByPlayerId(String playerId){
+        LambdaQueryWrapper<PlayerInfoEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(PlayerInfoEntity::getPlayerId,playerId);
+        return iPlayerInfoDal.getOne(lqw);
+    }
+
+
+    /**
      * 对象转换
      * @param page 分页信息
      * @param nowPlayerRank 当前排名信息
      * @return 返回分页结果
      */
-    private ResultPage<PlayerInfoDto> convertDto(Page<PlayerInfoEntity> page,Map<String, PlayerRankInfoEntity> nowPlayerRank){
+    private ResultPage<PlayerInfoDto> convertDtoBatch(Page<PlayerInfoEntity> page,Map<String, PlayerRankInfoEntity> nowPlayerRank){
         ResultPage<PlayerInfoDto> dtoResultPage = new ResultPage<>();
         dtoResultPage.setCurrent(page.getCurrent());
         dtoResultPage.setPages(page.getPages());
@@ -122,18 +178,29 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
         if (CollUtil.isNotEmpty(page.getRecords())){
             dtoResultPage.setRecords(
                     page.getRecords().stream().map(i->{
-                        PlayerInfoDto dto = new PlayerInfoDto();
-                        BeanUtils.copyProperties(i,dto);
                         PlayerRankInfoEntity rankInfo = nowPlayerRank.get(i.getPlayerId());
-                        if (rankInfo != null){
-                            PlayerRankInfoDto rankInfoDto = new PlayerRankInfoDto();
-                            BeanUtils.copyProperties(rankInfo,rankInfoDto);
-                            dto.setWeekRankInfo(rankInfoDto);
-                        }
-                        return dto;
+                        return convertDto(i,rankInfo);
                     }).collect(Collectors.toList())
             );
         }
         return dtoResultPage;
+    }
+
+
+    /**
+     * 对象转换
+     * @param playerInfo 球员信息
+     * @param rankInfo 当前的排名信息
+     * @return
+     */
+    private PlayerInfoDto convertDto(PlayerInfoEntity playerInfo,PlayerRankInfoEntity rankInfo){
+        PlayerInfoDto dto = new PlayerInfoDto();
+        BeanUtils.copyProperties(playerInfo,dto);
+        if (rankInfo != null){
+            PlayerRankInfoDto rankInfoDto = new PlayerRankInfoDto();
+            BeanUtils.copyProperties(rankInfo,rankInfoDto);
+            dto.setWeekRankInfo(rankInfoDto);
+        }
+        return dto;
     }
 }

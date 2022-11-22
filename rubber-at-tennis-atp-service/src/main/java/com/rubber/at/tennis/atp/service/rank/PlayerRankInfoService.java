@@ -103,7 +103,7 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
     public Map<String, PlayerRankInfoEntity> queryRankInfo(List<String> playerIds,TaskTypeEnums taskTypeEnums){
         TaskInfoEntity rankTask = taskQueryService.getValidTask(taskTypeEnums);
         if (rankTask == null || StrUtil.isEmpty(rankTask.getDataVersion())){
-            return new HashMap<>();
+            return new HashMap<>(2);
         }
         LambdaQueryWrapper<PlayerRankInfoEntity> lqw = new LambdaQueryWrapper<>();
         lqw.eq(PlayerRankInfoEntity::getDateVersion,rankTask.getDataVersion())
@@ -111,10 +111,45 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
 
         List<PlayerRankInfoEntity> list = iPlayerRankInfoDal.list(lqw);
         if (CollUtil.isEmpty(list)){
-            return new HashMap<>();
+            return new HashMap<>(2);
         }
         return list.stream().collect(Collectors.toMap(PlayerRankInfoEntity::getPlayerId,i->i,(o1,o2)->o1));
     }
+
+
+
+
+
+    /**
+     * 查询球员的基本信息
+     * @param playerId 当前的球员id
+     * @return 返回全部的排名信息
+     */
+    public List<PlayerRankInfoEntity> queryAllRankByPlayerId(String playerId){
+        LambdaQueryWrapper<PlayerRankInfoEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(PlayerRankInfoEntity::getPlayerId,playerId)
+                .orderByAsc(PlayerRankInfoEntity::getDateVersion);
+        return iPlayerRankInfoDal.list(lqw);
+    }
+
+
+    /**
+     * 查询球员的基本信息
+     * @param playerId 当前的球员id
+     * @return 返回全部的排名信息
+     */
+    public PlayerRankInfoEntity getPlayerNewRank(String playerId,TaskTypeEnums taskTypeEnums){
+        TaskInfoEntity rankTask = taskQueryService.getValidTask(taskTypeEnums);
+        if (rankTask == null || StrUtil.isEmpty(rankTask.getDataVersion())){
+            return null;
+        }
+        LambdaQueryWrapper<PlayerRankInfoEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(PlayerRankInfoEntity::getDateVersion,rankTask.getDataVersion())
+                .eq(PlayerRankInfoEntity::getPlayerId,playerId);
+        return iPlayerRankInfoDal.getOne(lqw);
+    }
+
+
 
 
     /**

@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.service.controller;
 
+import com.rubber.at.tennis.atp.api.base.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.service.player.PlayerInfoQueryService;
 import com.rubber.base.components.util.result.ResultMsg;
@@ -37,6 +38,16 @@ public class PlayerInfoQueryController {
     @PostMapping("/wta/search")
     public ResultMsg queryPlayerByPage(@RequestBody SearchQueryRequest request){
         return ResultMsg.success(playerInfoQueryService.queryWtaInfoPage(request));
+    }
+
+
+
+    /**
+     * 用户搜索
+     */
+    @PostMapping("/detail")
+    public ResultMsg getPlayerDetail(@RequestBody PlayerIdRequest request){
+        return ResultMsg.success(playerInfoQueryService.getPlayerDetail(request));
     }
 
 

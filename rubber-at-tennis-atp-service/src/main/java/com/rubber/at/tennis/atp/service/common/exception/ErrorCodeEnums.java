@@ -30,6 +30,7 @@ public enum  ErrorCodeEnums implements ICodeHandle {
     /**
      * 3-10-**-** 表示用户的行为错误
      */
+    PLAYER_NOT_EXIST("3101001","球员信息不存在"),
 
 
     ;
