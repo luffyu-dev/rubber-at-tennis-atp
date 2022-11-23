@@ -1,8 +1,9 @@
 package com.rubber.at.tennis.atp.service.controller;
 
-import com.rubber.at.tennis.atp.api.base.PlayerIdRequest;
+import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.service.player.PlayerInfoQueryService;
+import com.rubber.base.components.util.annotation.NeedLogin;
 import com.rubber.base.components.util.result.ResultMsg;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -1,6 +1,6 @@
 package com.rubber.at.tennis.atp.api.base;
 
-import com.rubber.base.components.util.result.page.BaseRequestPage;
+import com.rubber.base.components.util.session.BaseUserSession;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -10,7 +10,17 @@ import lombok.EqualsAndHashCode;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class SearchQueryRequest extends BaseRequestPage {
+public class SearchQueryRequest extends BaseUserSession {
+
+    /**
+     * 当前页
+     */
+    private int page = 1;
+
+    /**
+     * 一页的大小
+     */
+    private int size = 20;
 
     /**
      * 搜索的值

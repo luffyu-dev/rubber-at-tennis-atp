@@ -149,4 +149,10 @@ public class PlayerInfoDto {
      */
     private PlayerRankInfoDto weekRankInfo;
 
+
+    /**
+     * 是否关注
+     */
+    private boolean followed;
+
 }

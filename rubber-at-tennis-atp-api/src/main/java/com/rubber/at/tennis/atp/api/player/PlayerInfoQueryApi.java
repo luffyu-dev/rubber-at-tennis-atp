@@ -1,6 +1,6 @@
 package com.rubber.at.tennis.atp.api.player;
 
-import com.rubber.at.tennis.atp.api.base.PlayerIdRequest;
+import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDetail;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;

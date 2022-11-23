@@ -1,4 +1,4 @@
-package com.rubber.at.tennis.atp.api.base;
+package com.rubber.at.tennis.atp.api.player.request;
 
 import com.rubber.base.components.util.session.BaseUserSession;
 import lombok.Data;

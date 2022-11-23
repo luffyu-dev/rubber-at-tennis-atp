@@ -4,7 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.rubber.at.tennis.atp.api.base.PlayerIdRequest;
+import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.api.player.PlayerInfoQueryApi;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDetail;
@@ -23,9 +23,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +39,9 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
 
     @Autowired
     private PlayerRankInfoService playerRankInfoService;
+
+    @Autowired
+    private UserFollowPlayerApplyService userFollowPlayerApplyService;
 
 
     /**
@@ -59,7 +60,12 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
             nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.ATP_RANK);
         }
-        return convertDtoBatch(page,nowPlayerRank);
+        // 查询是否有关注
+        Set<String> followPlayer = new HashSet<>();
+        if (request.getUid() != null){
+            followPlayer = userFollowPlayerApplyService.queryUserFollowPlayer(request);
+        }
+        return convertDtoBatch(page,nowPlayerRank,followPlayer);
 
     }
 
@@ -79,7 +85,13 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
             nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.WTA_RANK);
         }
-        return convertDtoBatch(page,nowPlayerRank);
+
+        // 查询是否有关注
+        Set<String> followPlayer = new HashSet<>();
+        if (request.getUid() != null){
+            followPlayer = userFollowPlayerApplyService.queryUserFollowPlayer(request);
+        }
+        return convertDtoBatch(page,nowPlayerRank,followPlayer);
     }
 
     /**
@@ -123,7 +135,11 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
                     }).collect(Collectors.toList())
                 );
             }
+        }
 
+        // 查询是否关注
+        if (playerIdRequest.getUid() != null){
+            playerInfoDetail.setFollowed(userFollowPlayerApplyService.isFollowed(playerIdRequest));
         }
         return playerInfoDetail;
     }
@@ -168,7 +184,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
      * @param nowPlayerRank 当前排名信息
      * @return 返回分页结果
      */
-    private ResultPage<PlayerInfoDto> convertDtoBatch(Page<PlayerInfoEntity> page,Map<String, PlayerRankInfoEntity> nowPlayerRank){
+    private ResultPage<PlayerInfoDto> convertDtoBatch(Page<PlayerInfoEntity> page,Map<String, PlayerRankInfoEntity> nowPlayerRank,Set<String> followPlayer){
         ResultPage<PlayerInfoDto> dtoResultPage = new ResultPage<>();
         dtoResultPage.setCurrent(page.getCurrent());
         dtoResultPage.setPages(page.getPages());
@@ -179,7 +195,9 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             dtoResultPage.setRecords(
                     page.getRecords().stream().map(i->{
                         PlayerRankInfoEntity rankInfo = nowPlayerRank.get(i.getPlayerId());
-                        return convertDto(i,rankInfo);
+                        PlayerInfoDto playerInfoDto =  convertDto(i,rankInfo);
+                        playerInfoDto.setFollowed(followPlayer.contains(playerInfoDto.getPlayerId()));
+                        return playerInfoDto;
                     }).collect(Collectors.toList())
             );
         }
