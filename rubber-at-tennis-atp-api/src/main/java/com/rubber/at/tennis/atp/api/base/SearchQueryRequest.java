@@ -26,4 +26,9 @@ public class SearchQueryRequest extends BaseUserSession {
      * 搜索的值
      */
     private String searchValue;
+
+    /**
+     * 是否只查询关注的球员
+     */
+    private boolean justFollow;
 }

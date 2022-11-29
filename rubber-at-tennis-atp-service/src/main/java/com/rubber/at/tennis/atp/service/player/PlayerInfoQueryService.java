@@ -12,6 +12,7 @@ import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;
 import com.rubber.at.tennis.atp.api.player.enums.PlayerTypeEnums;
 import com.rubber.at.tennis.atp.api.rank.dto.PlayerRankInfoDto;
 import com.rubber.at.tennis.atp.api.task.TaskTypeEnums;
+import com.rubber.at.tennis.atp.dao.condition.FollowPlayerCondition;
 import com.rubber.at.tennis.atp.dao.dal.IPlayerInfoDal;
 import com.rubber.at.tennis.atp.dao.entity.PlayerInfoEntity;
 import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
@@ -60,12 +61,10 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
             nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.ATP_RANK);
         }
+        ResultPage<PlayerInfoDto> resultPage =  convertDtoBatch(page,nowPlayerRank);
         // 查询是否有关注
-        Set<String> followPlayer = new HashSet<>();
-        if (request.getUid() != null){
-            followPlayer = userFollowPlayerApplyService.queryUserFollowPlayer(request);
-        }
-        return convertDtoBatch(page,nowPlayerRank,followPlayer);
+        handlerFollowed(request,resultPage);
+        return resultPage;
 
     }
 
@@ -85,13 +84,11 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
             nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.WTA_RANK);
         }
-
+        ResultPage<PlayerInfoDto> resultPage =  convertDtoBatch(page,nowPlayerRank);
         // 查询是否有关注
-        Set<String> followPlayer = new HashSet<>();
-        if (request.getUid() != null){
-            followPlayer = userFollowPlayerApplyService.queryUserFollowPlayer(request);
-        }
-        return convertDtoBatch(page,nowPlayerRank,followPlayer);
+        handlerFollowed(request,resultPage);
+
+        return resultPage;
     }
 
     /**
@@ -155,6 +152,14 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
         page.setCurrent(request.getPage());
         page.setSize(request.getSize());
         page.setSearchCount(false);
+        // 只查询关注
+        if (request.isJustFollow()){
+            FollowPlayerCondition condition = new FollowPlayerCondition();
+            condition.setUid(request.getUid());
+            condition.setSearchValue(request.getSearchValue());
+            return iPlayerInfoDal.queryFollowPlayer(page,condition);
+        }
+
         LambdaQueryWrapper<PlayerInfoEntity> lqw = new LambdaQueryWrapper<>();
         if (StrUtil.isNotBlank(request.getSearchValue())) {
             lqw.like(PlayerInfoEntity::getChinaFullName, "%" + request.getSearchValue() + "%")
@@ -184,7 +189,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
      * @param nowPlayerRank 当前排名信息
      * @return 返回分页结果
      */
-    private ResultPage<PlayerInfoDto> convertDtoBatch(Page<PlayerInfoEntity> page,Map<String, PlayerRankInfoEntity> nowPlayerRank,Set<String> followPlayer){
+    private ResultPage<PlayerInfoDto> convertDtoBatch(Page<PlayerInfoEntity> page,Map<String, PlayerRankInfoEntity> nowPlayerRank){
         ResultPage<PlayerInfoDto> dtoResultPage = new ResultPage<>();
         dtoResultPage.setCurrent(page.getCurrent());
         dtoResultPage.setPages(page.getPages());
@@ -195,9 +200,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             dtoResultPage.setRecords(
                     page.getRecords().stream().map(i->{
                         PlayerRankInfoEntity rankInfo = nowPlayerRank.get(i.getPlayerId());
-                        PlayerInfoDto playerInfoDto =  convertDto(i,rankInfo);
-                        playerInfoDto.setFollowed(followPlayer.contains(playerInfoDto.getPlayerId()));
-                        return playerInfoDto;
+                        return   convertDto(i,rankInfo);
                     }).collect(Collectors.toList())
             );
         }
@@ -220,5 +223,25 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             dto.setWeekRankInfo(rankInfoDto);
         }
         return dto;
+    }
+
+    /**
+     * 处理是否关注
+     */
+    private void handlerFollowed(SearchQueryRequest request,ResultPage<PlayerInfoDto> resultPage){
+        if (CollUtil.isEmpty(resultPage.getRecords())){
+            return;
+        }
+        // 查询是否有关注
+        if (request.isJustFollow()){
+           for (PlayerInfoDto playerInfoDto:resultPage.getRecords()){
+               playerInfoDto.setFollowed(true);
+           }
+        }else if (request.getUid() != null){
+            Set<String> followPlayer = userFollowPlayerApplyService.queryUserFollowPlayer(request);
+            for (PlayerInfoDto playerInfoDto:resultPage.getRecords()){
+                playerInfoDto.setFollowed(followPlayer.contains(playerInfoDto.getPlayerId()));
+            }
+        }
     }
 }

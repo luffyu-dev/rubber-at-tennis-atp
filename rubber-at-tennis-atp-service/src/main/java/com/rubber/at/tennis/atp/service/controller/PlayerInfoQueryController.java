@@ -28,6 +28,7 @@ public class PlayerInfoQueryController {
      * 排名搜索
      */
     @PostMapping("/atp/search")
+    @NeedLogin(request = false)
     public ResultMsg queryRankByPage(@RequestBody SearchQueryRequest request){
         return ResultMsg.success(playerInfoQueryService.queryAtpInfoPage(request));
     }
@@ -37,6 +38,7 @@ public class PlayerInfoQueryController {
      * 用户搜索
      */
     @PostMapping("/wta/search")
+    @NeedLogin(request = false)
     public ResultMsg queryPlayerByPage(@RequestBody SearchQueryRequest request){
         return ResultMsg.success(playerInfoQueryService.queryWtaInfoPage(request));
     }
@@ -47,6 +49,7 @@ public class PlayerInfoQueryController {
      * 用户搜索
      */
     @PostMapping("/detail")
+    @NeedLogin(request = false)
     public ResultMsg getPlayerDetail(@RequestBody PlayerIdRequest request){
         return ResultMsg.success(playerInfoQueryService.getPlayerDetail(request));
     }
