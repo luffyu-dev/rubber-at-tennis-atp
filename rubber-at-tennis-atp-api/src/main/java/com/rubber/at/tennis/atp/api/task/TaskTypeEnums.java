@@ -16,7 +16,9 @@ public enum TaskTypeEnums {
 
     ATP_MATCH_INFO,
 
-    WTA_MATCH_INFO;
+    WTA_MATCH_INFO,
+
+    PLAYER_MATCH_RESULT;
 
 
 }
