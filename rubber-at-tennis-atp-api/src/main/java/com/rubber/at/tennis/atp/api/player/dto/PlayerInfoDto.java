@@ -53,6 +53,16 @@ public class PlayerInfoDto {
     private String playerAvatar;
 
     /**
+     * 运动员照片
+     */
+    private String playerImg;
+
+    /**
+     * 运动员照片
+     */
+    private String holdModel;
+
+    /**
      * 国籍名称（中）
      */
     private String nationChineseName;

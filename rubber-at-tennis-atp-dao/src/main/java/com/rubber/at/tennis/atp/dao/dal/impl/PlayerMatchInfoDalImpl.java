@@ -6,6 +6,8 @@ import com.rubber.at.tennis.atp.dao.entity.PlayerMatchInfoEntity;
 import com.rubber.base.components.mysql.plugins.admin.BaseAdminService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * <p>
  * 球员的比赛记录表 服务实现类

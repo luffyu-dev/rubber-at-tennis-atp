@@ -80,6 +80,18 @@ public class PlayerInfoEntity extends BaseEntity {
     private String playerAvatar;
 
     /**
+     * 运动员照片
+     */
+    @TableField("Fplayer_img")
+    private String playerImg;
+
+    /**
+     * 运动员照片
+     */
+    @TableField("Fhold_model")
+    private String holdModel;
+
+    /**
      * 国籍名称（中）
      */
     @TableField("Fnation_chinese_name")

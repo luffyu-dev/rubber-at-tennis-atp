@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.api.player;
 
+import com.rubber.at.tennis.atp.api.player.response.PlayerMatchResultResponse;
 import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDetail;
@@ -34,5 +35,12 @@ public interface PlayerInfoQueryApi {
      * @return 返回球员的基本信息
      */
     PlayerInfoDetail getPlayerDetail(PlayerIdRequest playerIdRequest);
+
+
+    /**
+     * 查询历史排名信息
+     * @return 返回排名信息
+     */
+    PlayerMatchResultResponse queryAllMatchResult(PlayerIdRequest playerIdRequest);
 
 }

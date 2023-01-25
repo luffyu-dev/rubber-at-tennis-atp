@@ -25,7 +25,7 @@ public class PlayerInfoQueryController {
 
 
     /**
-     * 排名搜索
+     * atp球员搜索
      */
     @PostMapping("/atp/search")
     @NeedLogin(request = false)
@@ -35,7 +35,7 @@ public class PlayerInfoQueryController {
 
 
     /**
-     * 用户搜索
+     * wta球员搜索
      */
     @PostMapping("/wta/search")
     @NeedLogin(request = false)
@@ -46,12 +46,22 @@ public class PlayerInfoQueryController {
 
 
     /**
-     * 用户搜索
+     * 球员详情
      */
     @PostMapping("/detail")
     @NeedLogin(request = false)
     public ResultMsg getPlayerDetail(@RequestBody PlayerIdRequest request){
         return ResultMsg.success(playerInfoQueryService.getPlayerDetail(request));
+    }
+
+
+    /**
+     * 球员详情
+     */
+    @PostMapping("/match-result")
+    @NeedLogin(request = false)
+    public ResultMsg matchResult(@RequestBody PlayerIdRequest request){
+        return ResultMsg.success(playerInfoQueryService.queryAllMatchResult(request));
     }
 
 
