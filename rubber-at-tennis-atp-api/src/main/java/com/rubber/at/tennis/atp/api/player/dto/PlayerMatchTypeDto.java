@@ -1,6 +1,5 @@
 package com.rubber.at.tennis.atp.api.player.dto;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -32,11 +31,6 @@ public class PlayerMatchTypeDto {
     @JsonProperty("mLg")
     private String matchLogo;
 
-    /**
-     * 比赛logo灰色
-     */
-    @JsonProperty("mLgg")
-    private String matchLogoGray;
 
     /**
      * 冠军数量

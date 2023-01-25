@@ -55,11 +55,6 @@ public class MatchTypeEntity extends BaseEntity {
     @TableField("Fmatch_logo")
     private String matchLogo;
 
-    /**
-     * 赛事灰色logo
-     */
-    @TableField("Fmatch_logo_gray")
-    private String matchLogoGray;
 
     /**
      * 赛事wtalogo
@@ -67,11 +62,6 @@ public class MatchTypeEntity extends BaseEntity {
     @TableField("Fmatch_logo_wta")
     private String matchLogoWta;
 
-    /**
-     * 赛事wta灰色logo
-     */
-    @TableField("Fmatch_logo_gray_wta")
-    private String matchLogoGrayWta;
 
     /**
      * 备注

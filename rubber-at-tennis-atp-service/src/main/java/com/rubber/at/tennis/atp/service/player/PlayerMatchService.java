@@ -95,7 +95,6 @@ public class PlayerMatchService {
         matchTypeDto.setMatchType(matchType.getMatchType());
         matchTypeDto.setMatchTypeName(matchType.getMatchTypeName());
         matchTypeDto.setMatchLogo(matchType.getMatchLogo());
-        matchTypeDto.setMatchLogoGray(matchType.getMatchLogoGray());
         MatchTypeEnums matchTypeEnums = MatchTypeEnums.getByType(matchType.getMatchType());
         if (matchTypeEnums != null){
             matchTypeDto.setShowChampionHonour(matchTypeEnums.getShowChampionHonour());
