@@ -7,21 +7,18 @@ import com.rubber.at.tennis.atp.api.player.dto.PlayerMatchTypeDto;
 import com.rubber.at.tennis.atp.api.player.enums.MatchResultEnums;
 import com.rubber.at.tennis.atp.api.player.enums.MatchTypeEnums;
 import com.rubber.at.tennis.atp.api.player.enums.PlayerTypeEnums;
+import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.player.response.PlayerMatchResultResponse;
 import com.rubber.at.tennis.atp.dao.dal.IMatchTypeDal;
 import com.rubber.at.tennis.atp.dao.dal.IPlayerMatchResultDal;
 import com.rubber.at.tennis.atp.dao.entity.MatchTypeEntity;
-import com.rubber.at.tennis.atp.dao.entity.PlayerMatchInfoEntity;
 import com.rubber.at.tennis.atp.dao.entity.PlayerMatchResultEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +40,8 @@ public class PlayerMatchService {
     /**
      * 传销球员结果信息
      */
-    public PlayerMatchResultResponse queryPlayerMatchResult(String playerId){
+    public PlayerMatchResultResponse queryPlayerMatchResult(PlayerIdRequest playerIdRequest){
+        String playerId = playerIdRequest.getPlayerId();
         PlayerMatchResultResponse response = new PlayerMatchResultResponse();
         // 比赛类型
         List<MatchTypeEntity> matchTypeList = iMatchTypeDal.queryByGroupId("#");
@@ -55,7 +53,7 @@ public class PlayerMatchService {
         Map<String, List<PlayerMatchResultEntity>> matchInfoDist = playerMatchInfoList.stream().collect(Collectors.groupingBy(PlayerMatchResultEntity::getMatchType));
 
         // 大满贯数据信息
-        Map<String, PlayerGrandSlamDto> playerGrandSlamDict = new HashMap<>(8);
+        Map<String, PlayerGrandSlamDto> playerGrandSlamDict = new LinkedHashMap<>(16);
 
 
         List<PlayerMatchTypeDto> allMatchResultList = new ArrayList<>();
@@ -71,7 +69,7 @@ public class PlayerMatchService {
 
             List<PlayerMatchResultEntity> matchInfoList = matchInfoDist.get(matchTypeEnums.getType());
 
-            PlayerMatchTypeDto matchTypeDto = createMatchTypeDto(matchType,matchInfoList,playerGrandSlamDict);
+            PlayerMatchTypeDto matchTypeDto = createMatchTypeDto(matchType,matchInfoList,playerGrandSlamDict,playerIdRequest);
             if (MatchTypeEnums.GRAND_SLAM.equals(matchTypeEnums)){
                 grandSlamMatch = matchTypeDto;
             }else {
@@ -90,11 +88,15 @@ public class PlayerMatchService {
      * 创建比赛数据
      */
     private PlayerMatchTypeDto createMatchTypeDto(MatchTypeEntity matchType,List<PlayerMatchResultEntity> matchInfoList
-            ,Map<String, PlayerGrandSlamDto> playerGrandSlamDict){
+            ,Map<String, PlayerGrandSlamDto> playerGrandSlamDict,PlayerIdRequest req){
         PlayerMatchTypeDto matchTypeDto = new PlayerMatchTypeDto();
         matchTypeDto.setMatchType(matchType.getMatchType());
         matchTypeDto.setMatchTypeName(matchType.getMatchTypeName());
-        matchTypeDto.setMatchLogo(matchType.getMatchLogo());
+        if (PlayerTypeEnums.wta.toString().equalsIgnoreCase(req.getPlayerType())){
+            matchTypeDto.setMatchLogo(matchType.getMatchLogoWta());
+        }else {
+            matchTypeDto.setMatchLogo(matchType.getMatchLogo());
+        }
         MatchTypeEnums matchTypeEnums = MatchTypeEnums.getByType(matchType.getMatchType());
         if (matchTypeEnums != null){
             matchTypeDto.setShowChampionHonour(matchTypeEnums.getShowChampionHonour());
@@ -126,7 +128,7 @@ public class PlayerMatchService {
                 matchTypeDto.addQf();
                 resultDtoList.add(resultDto);
             } else if (matchInfo.getMatchResult().startsWith("Attend")){
-                String num = matchInfo.getMatchResult().substring(matchInfo.getMatchResult().lastIndexOf(":")+1);
+//                String num = matchInfo.getMatchResult().substring(matchInfo.getMatchResult().lastIndexOf(":")+1);
 //                matchTypeDto.addO(Integer.parseInt(num));
             }
         }
@@ -143,7 +145,11 @@ public class PlayerMatchService {
         if (bgm == null){
             return;
         }
-        PlayerGrandSlamDto grandSlamDto = map.getOrDefault(matchInfo.getMatchYear(),new PlayerGrandSlamDto());
+        PlayerGrandSlamDto grandSlamDto = map.get(matchInfo.getMatchYear());
+        if (grandSlamDto == null){
+            grandSlamDto = new PlayerGrandSlamDto();
+            map.put(matchInfo.getMatchYear(),grandSlamDto);
+        }
         grandSlamDto.setYear(matchInfo.getMatchYear());
         switch (bgm){
             case AO:
@@ -161,7 +167,6 @@ public class PlayerMatchService {
             default:
                 break;
         }
-        map.put(matchInfo.getMatchYear(),grandSlamDto);
     }
 
 

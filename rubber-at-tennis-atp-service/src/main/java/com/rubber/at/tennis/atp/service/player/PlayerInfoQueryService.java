@@ -152,7 +152,10 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
      */
     @Override
     public PlayerMatchResultResponse queryAllMatchResult(PlayerIdRequest playerIdRequest) {
-        return playerMatchService.queryPlayerMatchResult(playerIdRequest.getPlayerId());
+        if (playerIdRequest.getPlayerId() == null){
+            return new PlayerMatchResultResponse();
+        }
+        return playerMatchService.queryPlayerMatchResult(playerIdRequest);
     }
 
     /**

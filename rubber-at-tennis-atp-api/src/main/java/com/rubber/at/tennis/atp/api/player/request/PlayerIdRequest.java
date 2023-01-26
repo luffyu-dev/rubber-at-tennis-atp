@@ -17,4 +17,9 @@ public class PlayerIdRequest extends BaseUserSession {
      */
     private String playerId;
 
+    /**
+     * 球员类型
+     */
+    private String playerType;
+
 }
