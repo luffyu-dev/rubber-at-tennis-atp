@@ -1,11 +1,14 @@
 package com.rubber.at.tennis.atp.service.rank;
 
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.FIFOCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
+import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;
 import com.rubber.at.tennis.atp.api.player.enums.PlayerTypeEnums;
 import com.rubber.at.tennis.atp.api.rank.PlayerRankInfoApi;
 import com.rubber.at.tennis.atp.api.rank.dto.PlayerRankInfoDto;
@@ -15,6 +18,8 @@ import com.rubber.at.tennis.atp.dao.dal.IPlayerRankInfoDal;
 import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
 import com.rubber.at.tennis.atp.dao.entity.TaskInfoEntity;
 import com.rubber.at.tennis.atp.service.task.TaskQueryService;
+import com.rubber.base.components.util.result.page.ResultPage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +34,7 @@ import java.util.stream.Collectors;
  * @author luffyu
  * Created on 2022/8/15
  */
+@Slf4j
 @Service
 public class PlayerRankInfoService implements PlayerRankInfoApi {
 
@@ -41,6 +47,12 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
 
 
     /**
+     * 球员的缓存信息
+     */
+    private FIFOCache<String, RankPageResponse<PlayerRankInfoDto>> rankCache = CacheUtil.newFIFOCache(10,6 * 24 * 60 * 1000);
+
+
+    /**
      * apt球员的分页查询
      *
      * @param request 当前请求
@@ -48,9 +60,23 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
      */
     @Override
     public RankPageResponse<PlayerRankInfoDto> queryAtpRankPage(SearchQueryRequest request) {
-        TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.ATP_RANK);
-        Page<PlayerRankInfoEntity> atpRankInfo = queryByPage(request, PlayerTypeEnums.atp, rankTask);
-        return convertDto(atpRankInfo,rankTask);
+        String cacheKey = "ATP:PLAYER:"+request.getPage();
+        RankPageResponse<PlayerRankInfoDto> resultPage = null;
+        boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
+        if (isNeedCache){
+            log.info("命中atp球员实时排名信息的缓存信息{}",request);
+            resultPage = rankCache.get(cacheKey);
+        }
+        if (resultPage == null){
+            TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.ATP_RANK);
+            Page<PlayerRankInfoEntity> atpRankInfo = queryByPage(request, PlayerTypeEnums.atp, rankTask);
+            resultPage =  convertDto(atpRankInfo,rankTask);
+            if (isNeedCache){
+                rankCache.put(cacheKey,resultPage);
+            }
+        }
+        return resultPage;
+
     }
 
     /**
@@ -61,9 +87,22 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
      */
     @Override
     public RankPageResponse<PlayerRankInfoDto> queryWtaRankPage(SearchQueryRequest request) {
-        TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.WTA_RANK);
-        Page<PlayerRankInfoEntity> wtaRankInfo = queryByPage(request, PlayerTypeEnums.wta, rankTask);
-        return convertDto(wtaRankInfo,rankTask);
+        String cacheKey = "WTA:PLAYER:"+request.getPage();
+        RankPageResponse<PlayerRankInfoDto> resultPage = null;
+        boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
+        if (isNeedCache){
+            log.info("命中wat球员实时排名信息的缓存信息{}",request);
+            resultPage = rankCache.get(cacheKey);
+        }
+        if (resultPage == null) {
+            TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.WTA_RANK);
+            Page<PlayerRankInfoEntity> wtaRankInfo = queryByPage(request, PlayerTypeEnums.wta, rankTask);
+            resultPage = convertDto(wtaRankInfo, rankTask);
+            if (isNeedCache){
+                rankCache.put(cacheKey,resultPage);
+            }
+        }
+        return resultPage;
     }
 
 

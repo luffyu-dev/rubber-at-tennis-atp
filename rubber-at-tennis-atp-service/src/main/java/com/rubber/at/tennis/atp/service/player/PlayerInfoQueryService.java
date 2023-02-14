@@ -1,5 +1,7 @@
 package com.rubber.at.tennis.atp.service.player;
 
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.FIFOCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -22,6 +24,7 @@ import com.rubber.at.tennis.atp.service.common.exception.ErrorCodeEnums;
 import com.rubber.at.tennis.atp.service.common.exception.RubberServiceException;
 import com.rubber.at.tennis.atp.service.rank.PlayerRankInfoService;
 import com.rubber.base.components.util.result.page.ResultPage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
  * @author luffyu
  * Created on 2022/8/15
  */
+@Slf4j
 @Service
 public class PlayerInfoQueryService implements PlayerInfoQueryApi {
 
@@ -49,6 +53,11 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
     @Autowired
     private PlayerMatchService playerMatchService;
 
+    /**
+     * 球员的缓存信息
+     */
+    private FIFOCache<String,ResultPage<PlayerInfoDto>> playerCache = CacheUtil.newFIFOCache(10,6 * 24 * 60 * 1000);
+
 
     /**
      * apt球员的分页查询
@@ -58,15 +67,28 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
      */
     @Override
     public ResultPage<PlayerInfoDto> queryAtpInfoPage(SearchQueryRequest request) {
-        // 球员分页查询
-        Page<PlayerInfoEntity> page = queryByPage(request,PlayerTypeEnums.atp);
-        // 排名查询
-        Map<String, PlayerRankInfoEntity> nowPlayerRank = new HashMap<>();
-        if (CollUtil.isNotEmpty(page.getRecords())){
-            List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
-            nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.ATP_RANK);
+        String cacheKey = "ATP:PLAYER:"+request.getPage();
+        ResultPage<PlayerInfoDto> resultPage = null;
+        boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
+        // 前两页命中换成
+        if (isNeedCache){
+            log.info("命中atp球员信息的缓存信息{}",request);
+            resultPage = playerCache.get(cacheKey);
         }
-        ResultPage<PlayerInfoDto> resultPage =  convertDtoBatch(page,nowPlayerRank);
+        if (resultPage == null) {
+            // 球员分页查询
+            Page<PlayerInfoEntity> page = queryByPage(request, PlayerTypeEnums.atp);
+            // 排名查询
+            Map<String, PlayerRankInfoEntity> nowPlayerRank = new HashMap<>();
+            if (CollUtil.isNotEmpty(page.getRecords())) {
+                List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
+                nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds, TaskTypeEnums.ATP_RANK);
+            }
+            resultPage = convertDtoBatch(page, nowPlayerRank);
+            if (isNeedCache){
+                playerCache.put(cacheKey,resultPage);
+            }
+        }
         // 查询是否有关注
         handlerFollowed(request,resultPage);
         return resultPage;
@@ -81,15 +103,28 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
      */
     @Override
     public ResultPage<PlayerInfoDto> queryWtaInfoPage(SearchQueryRequest request) {
-        // 球员分页查询
-        Page<PlayerInfoEntity> page = queryByPage(request,PlayerTypeEnums.wta);
-        // 排名查询
-        Map<String, PlayerRankInfoEntity> nowPlayerRank = new HashMap<>();
-        if (CollUtil.isNotEmpty(page.getRecords())){
-            List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
-            nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds,TaskTypeEnums.WTA_RANK);
+        String cacheKey = "WTA:PLAYER:"+request.getPage();
+        ResultPage<PlayerInfoDto> resultPage = null;
+        boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
+        if (isNeedCache){
+            log.info("命中wat球员信息的缓存信息{}",request);
+            resultPage = playerCache.get(cacheKey);
         }
-        ResultPage<PlayerInfoDto> resultPage =  convertDtoBatch(page,nowPlayerRank);
+        if (resultPage == null) {
+
+            // 球员分页查询
+            Page<PlayerInfoEntity> page = queryByPage(request, PlayerTypeEnums.wta);
+            // 排名查询
+            Map<String, PlayerRankInfoEntity> nowPlayerRank = new HashMap<>();
+            if (CollUtil.isNotEmpty(page.getRecords())) {
+                List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
+                nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds, TaskTypeEnums.WTA_RANK);
+            }
+            resultPage = convertDtoBatch(page, nowPlayerRank);
+            if (isNeedCache){
+                playerCache.put(cacheKey,resultPage);
+            }
+        }
         // 查询是否有关注
         handlerFollowed(request,resultPage);
 
