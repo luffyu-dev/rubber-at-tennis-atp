@@ -121,7 +121,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
                 nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds, TaskTypeEnums.WTA_RANK);
             }
             resultPage = convertDtoBatch(page, nowPlayerRank);
-            if (isNeedCache){
+            if (isNeedCache && resultPage.getRecords() != null && resultPage.getRecords().size() == request.getSize()){
                 playerCache.put(cacheKey,resultPage);
             }
         }

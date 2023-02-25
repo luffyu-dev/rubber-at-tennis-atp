@@ -71,7 +71,7 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
             TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.ATP_RANK);
             Page<PlayerRankInfoEntity> atpRankInfo = queryByPage(request, PlayerTypeEnums.atp, rankTask);
             resultPage =  convertDto(atpRankInfo,rankTask);
-            if (isNeedCache){
+            if (isNeedCache && resultPage.getRecords() != null && request.getSize() == resultPage.getRecords().size()){
                 rankCache.put(cacheKey,resultPage);
             }
         }
