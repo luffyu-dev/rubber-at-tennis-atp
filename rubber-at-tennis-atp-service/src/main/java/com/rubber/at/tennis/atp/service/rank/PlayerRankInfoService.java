@@ -60,7 +60,7 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
      */
     @Override
     public RankPageResponse<PlayerRankInfoDto> queryAtpRankPage(SearchQueryRequest request) {
-        String cacheKey = "ATP:PLAYER:"+request.getPage();
+        String cacheKey = "ATP:PLAYER:"+request.getPage()+":"+request.getSize();
         RankPageResponse<PlayerRankInfoDto> resultPage = null;
         boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
         if (isNeedCache){
@@ -87,7 +87,7 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
      */
     @Override
     public RankPageResponse<PlayerRankInfoDto> queryWtaRankPage(SearchQueryRequest request) {
-        String cacheKey = "WTA:PLAYER:"+request.getPage();
+        String cacheKey = "WTA:PLAYER:"+request.getPage()+":"+request.getSize();
         RankPageResponse<PlayerRankInfoDto> resultPage = null;
         boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
         if (isNeedCache){
@@ -98,7 +98,7 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
             TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.WTA_RANK);
             Page<PlayerRankInfoEntity> wtaRankInfo = queryByPage(request, PlayerTypeEnums.wta, rankTask);
             resultPage = convertDto(wtaRankInfo, rankTask);
-            if (isNeedCache){
+            if (isNeedCache  &&  resultPage.getRecords() != null && request.getSize() == resultPage.getRecords().size()){
                 rankCache.put(cacheKey,resultPage);
             }
         }
