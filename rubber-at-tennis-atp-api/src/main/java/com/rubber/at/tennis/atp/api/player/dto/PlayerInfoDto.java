@@ -151,7 +151,7 @@ public class PlayerInfoDto {
     /**
      * 标签
      */
-    private String ags;
+    private String tags;
 
 
     /**
