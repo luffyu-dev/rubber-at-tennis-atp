@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.dao.dal.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.rubber.at.tennis.atp.dao.entity.MatchTypeEntity;
 import com.rubber.at.tennis.atp.dao.mapper.MatchTypeMapper;
@@ -23,7 +24,9 @@ public class MatchTypeDalImpl extends BaseAdminService<MatchTypeMapper, MatchTyp
     @Override
     public List<MatchTypeEntity> queryByGroupId(String group) {
         LambdaQueryWrapper<MatchTypeEntity> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(MatchTypeEntity::getMatchGroup,group);
+        if (StrUtil.isNotEmpty(group)){
+            lqw.eq(MatchTypeEntity::getMatchGroup,group);
+        }
         return list(lqw);
     }
 }
