@@ -1,9 +1,17 @@
 package com.rubber.at.tennis.atp.web;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
+import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
+import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
 import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDetail;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;
+import com.rubber.at.tennis.atp.dao.condition.RankSearchCondition;
+import com.rubber.at.tennis.atp.dao.dal.IPlayerRankInfoDal;
+import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
 import com.rubber.at.tennis.atp.service.player.PlayerInfoQueryService;
 import com.rubber.at.tennis.atp.service.player.UserFollowPlayerApplyService;
 import com.rubber.base.components.util.result.page.ResultPage;
@@ -12,6 +20,8 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
+
+import java.util.List;
 
 
 @SpringBootTest
@@ -52,6 +62,22 @@ class RubberAtTennisAtpWebApplicationTests {
         System.out.println();
 
 
+   }
+
+    @Autowired
+    private IPlayerRankInfoDal iPlayerRankInfoDal;
+
+    @Test
+    public void queryTourMatchInfo(){
+        IPage<PlayerRankInfoEntity> page = new Page<>();
+        page.setSize(4);
+        page.setCurrent(1);
+        RankSearchCondition condition = new RankSearchCondition();
+        condition.setDataVersion("20220521");
+        condition.setPlayerType("atp");
+        condition.setSearchValue("中国");
+        IPage<PlayerRankInfoEntity> playerRankInfoEntities = iPlayerRankInfoDal.selectPlayerRank(page,condition);
+        System.out.println(playerRankInfoEntities);
     }
 
 

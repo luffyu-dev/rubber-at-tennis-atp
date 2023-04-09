@@ -102,4 +102,23 @@ public class WorldMatchPlayerInfo {
      * 比赛中的描述
      */
     private Integer livingFlag;
+
+
+    /**
+     * 球员相关信息
+     */
+    private String playerAvatar;
+
+    private String playerNationName;
+
+    private String playerNationImg;
+
+    /**
+     * 球员伙伴相关信息
+     */
+    private String partnerAvatar;
+
+    private String partnerNationName;
+
+    private String partnerNationImg;
 }

@@ -2,4 +2,48 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.rubber.at.tennis.atp.dao.mapper.PlayerRankInfoMapper">
 
+    <resultMap id="baseMap" type="com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity">
+        <result column="Fid" property="id" jdbcType="INTEGER"/>
+        <result column="Fplayer_id" property="playerId" jdbcType="VARCHAR"/>
+        <result column="Fplayer_type" property="playerType" jdbcType="VARCHAR"/>
+        <result column="Fthird_id" property="thirdId" jdbcType="VARCHAR"/>
+        <result column="Fchina_full_name" property="chinaFullName" jdbcType="VARCHAR"/>
+        <result column="Fnation_chinese_name" property="nationChineseName" jdbcType="VARCHAR"/>
+        <result column="Fnation_img" property="nationImg" jdbcType="VARCHAR"/>
+        <result column="Fpoint" property="point" jdbcType="INTEGER"/>
+        <result column="Fflop_point" property="flopPoint" jdbcType="INTEGER"/>
+        <result column="Fwin_point" property="winPoint" jdbcType="INTEGER"/>
+        <result column="Frank" property="rank" jdbcType="INTEGER"/>
+        <result column="Frank_change" property="rankChange" jdbcType="INTEGER"/>
+        <result column="Fofficial_rank" property="officialRank" jdbcType="INTEGER"/>
+        <result column="Fhighest_rank" property="highestRank" jdbcType="INTEGER"/>
+        <result column="Fcycle_win_pro" property="cycleWinPro" jdbcType="VARCHAR"/>
+        <result column="Fcycle_win_num" property="cycleWinNum" jdbcType="INTEGER"/>
+        <result column="Fcycle_lose_num" property="cycleLoseNum" jdbcType="INTEGER"/>
+        <result column="Fcycle_bonus" property="cycleBonus" jdbcType="VARCHAR"/>
+        <result column="Fdate_version" property="dateVersion" jdbcType="VARCHAR"/>
+        <result column="Fremark" property="remark" jdbcType="VARCHAR"/>
+        <result column="Fversion" property="version" jdbcType="INTEGER"/>
+        <result column="Fstatus" property="status" jdbcType="INTEGER"/>
+        <result column="Fcreate_time" property="createTime" jdbcType="VARCHAR"/>
+        <result column="Fupdate_time" property="updateTime" jdbcType="VARCHAR"/>
+        <result column="Fupdate_time" property="updateTime" jdbcType="VARCHAR"/>
+        <result column="Fplayer_avatar" property="playerAvatar" jdbcType="VARCHAR"/>
+    </resultMap>
+
+
+
+
+    <select id="selectPlayerRank" resultMap="baseMap">
+        select rank.*,player.Fplayer_avatar
+        from t_player_rank_info as rank
+        left join t_player_info as player on (rank.Fplayer_id = player.Fplayer_id)
+        where rank.Fdate_version = #{condition.dataVersion} and rank.Fplayer_type =  #{condition.playerType}
+        <if test="condition.searchValue != null">
+             and ( rank.Fchina_full_name like concat('%',#{condition.searchValue},'%') OR rank.Fnation_chinese_name like concat('%',#{condition.searchValue},'%') )
+        </if>
+        order by rank.Frank asc
+    </select>
+
+
 </mapper>

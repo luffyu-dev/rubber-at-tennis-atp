@@ -108,4 +108,9 @@ public class PlayerRankInfoDto {
      */
     private String remark;
 
+    /**
+     * 球员头像
+     */
+    private String playerAvatar;
+
 }

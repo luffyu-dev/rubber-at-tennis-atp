@@ -8,17 +8,16 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
-import com.rubber.at.tennis.atp.api.player.dto.PlayerInfoDto;
 import com.rubber.at.tennis.atp.api.player.enums.PlayerTypeEnums;
 import com.rubber.at.tennis.atp.api.rank.PlayerRankInfoApi;
 import com.rubber.at.tennis.atp.api.rank.dto.PlayerRankInfoDto;
 import com.rubber.at.tennis.atp.api.rank.response.RankPageResponse;
 import com.rubber.at.tennis.atp.api.task.TaskTypeEnums;
+import com.rubber.at.tennis.atp.dao.condition.RankSearchCondition;
 import com.rubber.at.tennis.atp.dao.dal.IPlayerRankInfoDal;
 import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
 import com.rubber.at.tennis.atp.dao.entity.TaskInfoEntity;
 import com.rubber.at.tennis.atp.service.task.TaskQueryService;
-import com.rubber.base.components.util.result.page.ResultPage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,20 +117,11 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
         page.setSize(queryDto.getSize());
         page.setOptimizeCountSql(false);
         page.setSearchCount(false);
-        LambdaQueryWrapper<PlayerRankInfoEntity> lambda = new LambdaQueryWrapper<>();
-        if (rankTask != null && StrUtil.isNotBlank(rankTask.getDataVersion())){
-            lambda.eq(PlayerRankInfoEntity::getDateVersion,rankTask.getDataVersion());
-        }
-        if (StrUtil.isNotBlank(queryDto.getSearchValue())) {
-            lambda.and(wq ->
-                    wq.like(PlayerRankInfoEntity::getChinaFullName, "%" + queryDto.getSearchValue() + "%")
-                            .or()
-                            .like(PlayerRankInfoEntity::getNationChineseName, "%" + queryDto.getSearchValue() + "%")
-            );
-        }
-        lambda.eq(PlayerRankInfoEntity::getPlayerType,playerTypeEnums.toString())
-                .orderByAsc(PlayerRankInfoEntity::getRank);
-        iPlayerRankInfoDal.page(page,lambda);
+        RankSearchCondition condition = new RankSearchCondition();
+        condition.setSearchValue(queryDto.getSearchValue());
+        condition.setDataVersion(rankTask.getDataVersion());
+        condition.setPlayerType(playerTypeEnums.toString());
+        iPlayerRankInfoDal.selectPlayerRank(page,condition);
         return page;
     }
 

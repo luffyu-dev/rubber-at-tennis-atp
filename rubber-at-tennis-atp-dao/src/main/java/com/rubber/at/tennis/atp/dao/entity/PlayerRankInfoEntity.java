@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.rubber.base.components.mysql.plugins.admin.bean.BaseEntity;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.rubber.base.components.mysql.utils.ReflectionUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -169,5 +170,10 @@ public class PlayerRankInfoEntity extends BaseEntity {
     @TableField("Fupdate_time")
     private Date updateTime;
 
+    /**
+     * 运动员头像
+     */
+    @TableField(exist = false)
+    private String playerAvatar;
 
 }

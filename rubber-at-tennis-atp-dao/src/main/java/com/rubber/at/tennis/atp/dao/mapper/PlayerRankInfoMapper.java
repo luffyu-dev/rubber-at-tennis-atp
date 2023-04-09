@@ -1,7 +1,12 @@
 package com.rubber.at.tennis.atp.dao.mapper;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.rubber.at.tennis.atp.dao.condition.RankSearchCondition;
 import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +18,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface PlayerRankInfoMapper extends BaseMapper<PlayerRankInfoEntity> {
 
+
+    List<PlayerRankInfoEntity> selectPlayerRank(IPage<PlayerRankInfoEntity> page, @Param("condition") RankSearchCondition condition);
 }

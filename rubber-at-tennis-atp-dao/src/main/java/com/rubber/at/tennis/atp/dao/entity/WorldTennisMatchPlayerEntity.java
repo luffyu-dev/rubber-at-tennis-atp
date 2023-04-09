@@ -155,4 +155,28 @@ public class WorldTennisMatchPlayerEntity extends BaseEntity {
     private Date updateTime;
 
 
+    /**
+     * 球员相关信息
+     */
+    @TableField("Fplayer_avatar")
+    private String playerAvatar;
+
+    @TableField("Fplayer_nation_name")
+    private String playerNationName;
+
+    @TableField("Fplayer_nation_img")
+    private String playerNationImg;
+
+    /**
+     * 球员伙伴相关信息
+     */
+    @TableField("Fpartner_avatar")
+    private String partnerAvatar;
+
+    @TableField("Fpartner_nation_name")
+    private String partnerNationName;
+
+    @TableField("Fpartner_nation_img")
+    private String partnerNationImg;
+
 }

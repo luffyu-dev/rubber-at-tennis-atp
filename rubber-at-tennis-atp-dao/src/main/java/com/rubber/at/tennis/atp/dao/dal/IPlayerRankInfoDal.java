@@ -1,7 +1,10 @@
 package com.rubber.at.tennis.atp.dao.dal;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.rubber.at.tennis.atp.dao.condition.RankSearchCondition;
 import com.rubber.at.tennis.atp.dao.entity.PlayerRankInfoEntity;
 import com.rubber.base.components.mysql.plugins.admin.IBaseAdminService;
+
 
 /**
  * <p>
@@ -13,4 +16,6 @@ import com.rubber.base.components.mysql.plugins.admin.IBaseAdminService;
  */
 public interface IPlayerRankInfoDal extends IBaseAdminService<PlayerRankInfoEntity> {
 
+
+    IPage<PlayerRankInfoEntity> selectPlayerRank(IPage<PlayerRankInfoEntity> page, RankSearchCondition condition);
 }
