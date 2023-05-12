@@ -16,6 +16,12 @@ public class WorldMatchReq extends BaseRequestPage {
 
 
     /**
+     * 调用场景
+     */
+    private String invokerScene;
+
+
+    /**
      * 比赛id
      */
     private String matchTypeId;

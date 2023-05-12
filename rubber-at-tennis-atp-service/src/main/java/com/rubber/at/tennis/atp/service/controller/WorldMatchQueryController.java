@@ -49,7 +49,6 @@ public class WorldMatchQueryController {
     @PostMapping("/query")
     public ResultMsg queryByPage(@RequestBody WorldMatchReq req){
         // 兼容性查询 后期删掉
-        req.setMatchTypeId("0410");
         return ResultMsg.success(worldMatchQueryApi.queryWorldMatch(req));
     }
 
