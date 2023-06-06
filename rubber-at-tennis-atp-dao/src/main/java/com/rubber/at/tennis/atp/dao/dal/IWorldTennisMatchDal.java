@@ -15,5 +15,6 @@ public interface IWorldTennisMatchDal extends IBaseAdminService<WorldTennisMatch
 
 
 
+    WorldTennisMatchEntity getById(String matchId);
 
 }

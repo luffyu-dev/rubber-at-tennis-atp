@@ -153,4 +153,16 @@ public class WorldTennisMatchEntity extends BaseEntity {
     private Date updateTime;
 
 
+    /**
+     * 比赛优先级
+     */
+    @TableField("Fseq")
+    private Integer seq;
+
+    /**
+     * 搜索key值
+     */
+    @TableField("Findex_key")
+    private String indexKey;
+
 }

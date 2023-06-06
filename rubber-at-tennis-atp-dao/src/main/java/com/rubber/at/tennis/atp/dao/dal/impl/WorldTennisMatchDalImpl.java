@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.dao.dal.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchEntity;
 import com.rubber.at.tennis.atp.dao.mapper.WorldTennisMatchMapper;
 import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchDal;
@@ -17,4 +18,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class WorldTennisMatchDalImpl extends BaseAdminService<WorldTennisMatchMapper, WorldTennisMatchEntity> implements IWorldTennisMatchDal {
 
+    @Override
+    public WorldTennisMatchEntity getById(String matchId) {
+        LambdaQueryWrapper<WorldTennisMatchEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(WorldTennisMatchEntity::getMatchId,matchId)
+                .last("limit 1");
+        return getOne(lqw);
+    }
 }

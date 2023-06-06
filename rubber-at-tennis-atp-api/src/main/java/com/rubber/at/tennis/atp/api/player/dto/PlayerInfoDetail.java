@@ -1,10 +1,8 @@
 package com.rubber.at.tennis.atp.api.player.dto;
 
-import com.rubber.at.tennis.atp.api.rank.dto.PlayerRankInfoDto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
 
 /**
  * @author luffyu
@@ -15,9 +13,6 @@ import java.util.List;
 public class PlayerInfoDetail extends PlayerInfoDto{
 
 
-    /**
-     * 存量的排名信息
-     */
-    private List<PlayerRankInfoDto> oldRankList;
+
 
 }

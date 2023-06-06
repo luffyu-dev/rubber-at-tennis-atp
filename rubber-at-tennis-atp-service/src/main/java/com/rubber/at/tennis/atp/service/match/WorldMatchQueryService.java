@@ -3,22 +3,24 @@ package com.rubber.at.tennis.atp.service.match;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.io.unit.DataUnit;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchPlayerInfo;
+import com.rubber.at.tennis.atp.api.match.dto.WorldMatchScoreRecordDto;
 import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
+import com.rubber.at.tennis.atp.api.match.enums.MatchStatusEnums;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
-import com.rubber.at.tennis.atp.dao.dal.IMatchTypeDal;
 import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchDal;
 import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchPlayerDal;
+import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchScoreRecordDal;
 import com.rubber.at.tennis.atp.dao.dal.IWorldTourMatchDal;
 import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchEntity;
 import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchPlayerEntity;
+import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchScoreRecordEntity;
 import com.rubber.at.tennis.atp.dao.entity.WorldTourMatchEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -46,6 +48,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
     @Autowired
     private IWorldTourMatchDal iWorldTourMatchDal;
+
+    @Autowired
+    private IWorldTennisMatchScoreRecordDal iWorldTennisMatchScoreRecordDal;
 
     /**
      * 查询巡回赛的基础信息
@@ -104,6 +109,7 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         }else {
             req.setMatchDay(DatePattern.NORM_DATE_FORMAT.format(tourMatchEntity.getEndTime()));
         }
+        req.setOrderBySeq(true);
         return queryWorldMatch(req);
     }
 
@@ -115,21 +121,62 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      */
     @Override
     public List<WorldMatchInfo> queryWorldMatch(WorldMatchReq req) {
+        Date now = new Date();
+        log.info(">>>>>queryWorldMatch req={}",req.getMatchDay());
+        if ("2023-05-21".equals(req.getMatchDay())){
+            req.setMatchDay(DatePattern.NORM_DATE_FORMAT.format(now));
+        }
         return queryWorldMatchFormDb(req);
     }
+
+    /**
+     * 获取比赛详情
+     *
+     * @param matchId
+     * @return
+     */
+    @Override
+    public WorldMatchInfo getLivingDetail(String matchId) {
+        WorldTennisMatchEntity matchEntity = iWorldTennisMatchDal.getById(matchId);
+        if (matchEntity == null){
+            return null;
+        }
+        List<WorldMatchInfo>  matchInfoList = queryWorldMatchFormDb(Collections.singletonList(matchEntity));
+        if (CollUtil.isEmpty(matchInfoList)){
+            return null;
+        }
+        WorldMatchInfo worldMatchInfo = matchInfoList.get(0);
+        // 查询明细
+        queryWorldMatchRecord(worldMatchInfo);
+        // 处理每盘的数据
+        handlerLivingSetData(worldMatchInfo);
+        return worldMatchInfo;
+    }
+
+
+    /**
+     * 查询比赛详情
+     * @param req
+     * @return
+     */
     public List<WorldMatchInfo> queryWorldMatchFormDb(WorldMatchReq req) {
         List<WorldMatchInfo> list = new ArrayList<>();
         Page<WorldTennisMatchEntity> matchEntityPage = queryByPage(req);
         if (CollUtil.isEmpty(matchEntityPage.getRecords())){
             return list;
         }
-        List<String> matchIds = matchEntityPage.getRecords().stream().map(WorldTennisMatchEntity::getMatchId).collect(Collectors.toList());
+        return queryWorldMatchFormDb(matchEntityPage.getRecords());
+    }
+    private List<WorldMatchInfo> queryWorldMatchFormDb(List<WorldTennisMatchEntity> matchList){
+        List<String> matchIds = matchList.stream().map(WorldTennisMatchEntity::getMatchId).collect(Collectors.toList());
+
+        List<WorldMatchInfo> list = new ArrayList<>();
         List<WorldTennisMatchPlayerEntity> pagePlayer = queryByPagePlayer(matchIds);
         if (CollUtil.isEmpty(pagePlayer)){
             return list;
         }
         Map<String, List<WorldTennisMatchPlayerEntity>> matchPlayer = pagePlayer.stream().collect(Collectors.groupingBy(WorldTennisMatchPlayerEntity::getMatchId));
-        for (WorldTennisMatchEntity worldTennisMatchEntity:matchEntityPage.getRecords()){
+        for (WorldTennisMatchEntity worldTennisMatchEntity:matchList){
             WorldMatchInfo worldMatchInfo = new WorldMatchInfo();
             BeanUtils.copyProperties(worldTennisMatchEntity,worldMatchInfo);
             List<WorldTennisMatchPlayerEntity> tennisMatchPlayer = matchPlayer.get(worldMatchInfo.getMatchId());
@@ -147,6 +194,12 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
                 continue;
             }
             BeanUtils.copyProperties(a,aPlayer);
+            if (!StringUtils.isEmpty(aPlayer.getPlayerName()) && aPlayer.getPlayerName().contains("·")){
+                aPlayer.setPlayerName(aPlayer.getPlayerName().substring(aPlayer.getPlayerName().indexOf("·") + 1));
+            }
+            if (!StringUtils.isEmpty(aPlayer.getPartnerName()) && aPlayer.getPartnerName().contains("·")){
+                aPlayer.setPartnerName(aPlayer.getPartnerName().substring(aPlayer.getPartnerName().indexOf("·") + 1));
+            }
             worldMatchInfo.setAPlayer(aPlayer);
 
             /**
@@ -158,7 +211,16 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
                 continue;
             }
             BeanUtils.copyProperties(b,bPlayer);
+            if (!StringUtils.isEmpty(bPlayer.getPlayerName()) && bPlayer.getPlayerName().contains("·")){
+                bPlayer.setPlayerName(bPlayer.getPlayerName().substring(bPlayer.getPlayerName().indexOf("·")+1));
+            }
+            if (!StringUtils.isEmpty(bPlayer.getPartnerName()) && bPlayer.getPartnerName().contains("·")){
+                bPlayer.setPartnerName(bPlayer.getPartnerName().substring(bPlayer.getPartnerName().indexOf("·")+1));
+            }
             worldMatchInfo.setBPlayer(bPlayer);
+            if (worldMatchInfo.getMatchTime() != null){
+                worldMatchInfo.setMatchTimeStr(DateUtil.format(worldMatchInfo.getMatchTime(),"MM/dd HH:mm"));
+            }
             list.add(worldMatchInfo);
         }
         return list;
@@ -173,10 +235,14 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         page.setCurrent(req.getPage());
         page.setSize(req.getSize());
         page.setSearchCount(false);
-
         LambdaQueryWrapper<WorldTennisMatchEntity> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(WorldTennisMatchEntity::getMatchDay,req.getMatchDay())
-                .orderByAsc(WorldTennisMatchEntity::getMatchTime);
+        lqw.eq(WorldTennisMatchEntity::getMatchDay,req.getMatchDay());
+        if (req.isOrderBySeq()){
+            lqw.orderByDesc(WorldTennisMatchEntity::getSeq)
+                    .orderByAsc(WorldTennisMatchEntity::getMatchTime);
+        }else {
+            lqw.orderByAsc(WorldTennisMatchEntity::getMatchTime);
+        }
         if (StrUtil.isNotEmpty(req.getMatchTypeId())){
             lqw.eq(WorldTennisMatchEntity::getMatchTypeId,req.getMatchTypeId());
         }
@@ -189,8 +255,15 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         if (StrUtil.isNotEmpty(req.getMatchGender())){
             lqw.eq(WorldTennisMatchEntity::getMatchGender,req.getMatchGender());
         }
-
-
+        if(StrUtil.isNotEmpty(req.getSearchValue())){
+            lqw.and(i->{
+                i.like(WorldTennisMatchEntity::getMatchName,req.getSearchValue())
+                        .or()
+                        .like(WorldTennisMatchEntity::getMatchGender,req.getSearchValue())
+                        .or()
+                        .like(WorldTennisMatchEntity::getIndexKey,req.getSearchValue());
+            });
+        }
         return iWorldTennisMatchDal.page(page, lqw);
     }
 
@@ -224,4 +297,110 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         return dto;
     }
 
+
+
+    private void queryWorldMatchRecord(WorldMatchInfo info){
+        List<WorldTennisMatchScoreRecordEntity> list = iWorldTennisMatchScoreRecordDal.queryByMatchId(info.getMatchId());
+        if (CollUtil.isNotEmpty(list)){
+            List<WorldMatchScoreRecordDto> recordDtos = list.stream().map(i->{
+                WorldMatchScoreRecordDto dto = new WorldMatchScoreRecordDto();
+                BeanUtils.copyProperties(i,dto);
+                if (i.getCreateTime() != null){
+                    dto.setCreateTimeStr(DateUtil.format(i.getCreateTime(),"dd号 HH:mm"));
+                }
+                return dto;
+            }).collect(Collectors.toList());
+            info.setRecordDtoList(recordDtos);
+        }
+    }
+
+
+    private void handlerLivingSetData(WorldMatchInfo worldMatchInfo){
+        if (MatchStatusEnums.UN_BEGIN.getType().equals(worldMatchInfo.getMatchStatus()) || MatchStatusEnums.NON_STATE.getType().equals(worldMatchInfo.getMatchStatus())){
+            return;
+        }
+        WorldMatchPlayerInfo playerInfoA = worldMatchInfo.getAPlayer();
+        WorldMatchPlayerInfo playerInfoB = worldMatchInfo.getBPlayer();
+        if (playerInfoA == null || playerInfoB == null){
+            return;
+        }
+        boolean justAdd = false;
+        boolean setSuc5 = doHandlerSet(worldMatchInfo,playerInfoA,playerInfoB,playerInfoA.getSet5Num(),playerInfoB.getSet5Num(),justAdd);
+        if (setSuc5){
+            justAdd  = true;
+            worldMatchInfo.setNowSet(5);
+        }
+
+        boolean setSuc4 = doHandlerSet(worldMatchInfo,playerInfoA,playerInfoB,playerInfoA.getSet4Num(),playerInfoB.getSet4Num(),justAdd);
+        if (setSuc4){
+            justAdd  = true;
+            if (worldMatchInfo.getNowSet() == null){
+                worldMatchInfo.setNowSet(4);
+            }
+        }
+        boolean setSuc3 = doHandlerSet(worldMatchInfo,playerInfoA,playerInfoB,playerInfoA.getSet3Num(),playerInfoB.getSet3Num(),justAdd);
+        if (setSuc3){
+            justAdd  = true;
+            if (worldMatchInfo.getNowSet() == null){
+                worldMatchInfo.setNowSet(3);
+            }
+        }
+        boolean setSuc2 = doHandlerSet(worldMatchInfo,playerInfoA,playerInfoB,playerInfoA.getSet2Num(),playerInfoB.getSet2Num(),justAdd);
+        if (setSuc2){
+            justAdd  = true;
+            if (worldMatchInfo.getNowSet() == null){
+                worldMatchInfo.setNowSet(2);
+            }
+        }
+        boolean setSuc1 = doHandlerSet(worldMatchInfo,playerInfoA,playerInfoB,playerInfoA.getSet1Num(),playerInfoB.getSet1Num(),justAdd);
+        if (setSuc1){
+            if (worldMatchInfo.getNowSet() == null){
+                worldMatchInfo.setNowSet(1);
+            }
+        }
+
+    }
+
+
+    private boolean doHandlerSet(WorldMatchInfo worldMatchInfo,WorldMatchPlayerInfo playerInfoA,WorldMatchPlayerInfo playerInfoB,String setNumA,String setNumB,boolean justAdd){
+        Boolean setResult = compareSetNum(setNumA, setNumB);
+        if (setResult != null){
+            // 判断是否结束
+            if (justAdd || MatchStatusEnums.END.getType().equals(worldMatchInfo.getMatchStatus())){
+                if (setResult) {
+                    playerInfoA.addWinSet();
+                } else {
+                    playerInfoB.addWinSet();
+                }
+            }
+            if (StringUtils.isEmpty(playerInfoA.getNowSetNum()) && StringUtils.isEmpty(playerInfoB.getNowSetNum())){
+                playerInfoA.setNowSetNum(setNumA);
+                playerInfoB.setNowSetNum(setNumB);
+            }
+            return true;
+        }
+        return false;
+    }
+
+
+
+    private Boolean compareSetNum(String setNumA,String setNumB){
+        if (StringUtils.isEmpty(setNumA) || StringUtils.isEmpty(setNumB)){
+            return null;
+        }
+        // 表示抢七
+        if (setNumA.startsWith("7")){
+            return true;
+        }
+        if (setNumB.startsWith("7")){
+            return false;
+        }
+        if (setNumA.contains("(")){
+            setNumA = setNumA.substring(0,setNumA.indexOf("("));
+        }
+        if (setNumB.contains("(")){
+            setNumB = setNumB.substring(0,setNumB.indexOf("("));
+        }
+        return Integer.parseInt(setNumA) > Integer.parseInt(setNumB);
+    }
 }

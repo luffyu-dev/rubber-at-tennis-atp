@@ -1,8 +1,10 @@
 package com.rubber.at.tennis.atp.web;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.api.R;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
+import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
 import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
@@ -36,30 +38,41 @@ class RubberAtTennisAtpWebApplicationTests {
     @Autowired
     private UserFollowPlayerApplyService userFollowPlayerApplyService;
 
+    @Autowired
+    private WorldMatchQueryApi worldMatchQueryApi;
+
     @Test
     public void query(){
-        PlayerIdRequest playerId = new PlayerIdRequest();
-        playerId.setPlayerId("Z272");
-        playerId.setUid(1000001);
-        userFollowPlayerApplyService.followPlayer(playerId);
 
+        WorldMatchInfo worldMatchInfo = worldMatchQueryApi.getLivingDetail("Miami_LS036");
 
-
-        SearchQueryRequest searchQueryRequest = new SearchQueryRequest();
-        searchQueryRequest.setUid(1000001);
-
-        ResultPage<PlayerInfoDto> infoDtoResultPage = playerInfoQueryService.queryAtpInfoPage(searchQueryRequest);
-
-
-        ResultPage<PlayerInfoDto> playerInfoDtoResultPage = playerInfoQueryService.queryWtaInfoPage(searchQueryRequest);
-
-        PlayerIdRequest playerIdRequest = new PlayerIdRequest();
-        playerIdRequest.setPlayerId("Z272");
-
-        PlayerInfoDetail playerDetail = playerInfoQueryService.getPlayerDetail(playerIdRequest);
-
+        WorldMatchInfo worldMatchInfo2 = worldMatchQueryApi.getLivingDetail("Miami_MS117");
 
         System.out.println();
+
+
+//        PlayerIdRequest playerId = new PlayerIdRequest();
+//        playerId.setPlayerId("Z272");
+//        playerId.setUid(1000001);
+//        userFollowPlayerApplyService.followPlayer(playerId);
+//
+//
+//
+//        SearchQueryRequest searchQueryRequest = new SearchQueryRequest();
+//        searchQueryRequest.setUid(1000001);
+//
+//        ResultPage<PlayerInfoDto> infoDtoResultPage = playerInfoQueryService.queryAtpInfoPage(searchQueryRequest);
+//
+//
+//        ResultPage<PlayerInfoDto> playerInfoDtoResultPage = playerInfoQueryService.queryWtaInfoPage(searchQueryRequest);
+//
+//        PlayerIdRequest playerIdRequest = new PlayerIdRequest();
+//        playerIdRequest.setPlayerId("Z272");
+//
+//        PlayerInfoDetail playerDetail = playerInfoQueryService.getPlayerDetail(playerIdRequest);
+//
+//
+//        System.out.println();
 
 
    }

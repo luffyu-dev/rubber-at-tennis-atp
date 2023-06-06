@@ -44,7 +44,7 @@ public class WorldMatchQueryController {
 
 
     /**
-     * 排名搜索
+     * 查询比赛的数据信息
      */
     @PostMapping("/query")
     public ResultMsg queryByPage(@RequestBody WorldMatchReq req){
@@ -54,12 +54,22 @@ public class WorldMatchQueryController {
 
 
     /**
-     * 排名搜索
+     * 获取全部进行中的比赛
      */
     @PostMapping("/query-living")
     public ResultMsg queryLivingByPage(@RequestBody WorldMatchReq req){
         // 兼容性查询 后期删掉
         return ResultMsg.success(worldMatchQueryApi.queryLivingWorldMatch(req));
+    }
+
+
+    /**
+     * 查询进行中的比赛详情
+     */
+    @PostMapping("/living-detail")
+    public ResultMsg getLivingDetail(@RequestBody WorldMatchReq req){
+        // 兼容性查询 后期删掉
+        return ResultMsg.success(worldMatchQueryApi.getLivingDetail(req.getMatchId()));
     }
 
 

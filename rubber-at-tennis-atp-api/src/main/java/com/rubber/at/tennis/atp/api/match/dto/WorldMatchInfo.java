@@ -3,6 +3,7 @@ package com.rubber.at.tennis.atp.api.match.dto;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author luffyu
@@ -77,6 +78,11 @@ public class WorldMatchInfo {
     private Date matchTime;
 
     /**
+     * 比赛开始时间描述
+     */
+    private String matchTimeStr;
+
+    /**
      * 比赛结束时间
      */
     private Date matchEndTime;
@@ -102,6 +108,10 @@ public class WorldMatchInfo {
     private String usedTime;
 
 
+
+
+
+
     /**
      * 球员信息A
      */
@@ -112,5 +122,15 @@ public class WorldMatchInfo {
      */
     private WorldMatchPlayerInfo bPlayer;
 
+
+    /**
+     * 当前是第几盘
+     */
+    private Integer nowSet;
+
+    /**
+     * 比赛信息
+     */
+    private List<WorldMatchScoreRecordDto> recordDtoList;
 
 }

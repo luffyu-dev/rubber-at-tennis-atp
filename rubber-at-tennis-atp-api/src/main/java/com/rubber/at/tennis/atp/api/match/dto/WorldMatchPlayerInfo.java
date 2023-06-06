@@ -1,6 +1,7 @@
 package com.rubber.at.tennis.atp.api.match.dto;
 
 import lombok.Data;
+import org.springframework.util.StringUtils;
 
 
 /**
@@ -88,6 +89,19 @@ public class WorldMatchPlayerInfo {
      */
     private String set5Num;
 
+
+    /**
+     * 当前盘数据
+     */
+    private String nowSetNum;
+
+
+    /**
+     * 赢得的盘数
+     */
+    private Integer winSetNum = 0;
+
+
     /**
      * 实时分数
      */
@@ -121,4 +135,10 @@ public class WorldMatchPlayerInfo {
     private String partnerNationName;
 
     private String partnerNationImg;
+
+
+    public Integer addWinSet(){
+        return this.winSetNum ++;
+    }
+
 }

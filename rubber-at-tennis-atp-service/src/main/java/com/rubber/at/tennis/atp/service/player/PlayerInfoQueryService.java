@@ -160,18 +160,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
             BeanUtils.copyProperties(newRank,rankInfoDto);
             playerInfoDetail.setWeekRankInfo(rankInfoDto);
             // 查询历史信息
-//            List<PlayerRankInfoEntity> oldRankList = playerRankInfoService.queryAllRankByPlayerId(playerIdRequest.getPlayerId());
-//            if (CollUtil.isNotEmpty(oldRankList)){
-//                playerInfoDetail.setOldRankList(
-//                    oldRankList.stream().map(i->{
-//                        PlayerRankInfoDto dto = new PlayerRankInfoDto();
-//                        BeanUtils.copyProperties(i,dto);
-//                        return dto;
-//                    }).collect(Collectors.toList())
-//                );
-//            }
         }
-
         // 查询是否关注
         if (playerIdRequest.getUid() != null){
             playerInfoDetail.setFollowed(userFollowPlayerApplyService.isFollowed(playerIdRequest));

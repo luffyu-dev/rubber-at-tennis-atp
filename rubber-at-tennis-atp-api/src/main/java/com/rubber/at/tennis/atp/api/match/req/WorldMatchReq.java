@@ -45,8 +45,25 @@ public class WorldMatchReq extends BaseRequestPage {
 
 
     /**
+     * 比赛id
+     */
+    private String matchId;
+
+
+    /**
      * 比赛状态
      */
     private List<Integer> matchStatusList;
 
+
+    /**
+     * 搜索的值
+     */
+    private String searchValue;
+
+
+    /**
+     * 是否按照优先级排序
+     */
+    private boolean orderBySeq;
 }
