@@ -96,21 +96,96 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
     @Override
     public List<WorldMatchInfo> queryLivingWorldMatch(WorldMatchReq req) {
         List<WorldTourMatchEntity> tourMatchList = iWorldTourMatchDal.queryByKeys(null,String.valueOf(DateUtil.year(new Date())), Arrays.asList(1,2));
-        // 查询进行中的比赛
+        // 查询进行中的赛事
         if (CollUtil.isEmpty(tourMatchList)){
             return new ArrayList<>();
         }
-        // 进行中的比赛
         WorldTourMatchEntity tourMatchEntity = tourMatchList.get(tourMatchList.size() - 1);
-        req.setMatchTypeId(tourMatchEntity.getTourId());
-        Date now = new Date();
-        if (DateUtil.compare(now,tourMatchEntity.getEndTime()) <=0){
-            req.setMatchDay(DatePattern.NORM_DATE_FORMAT.format(now));
-        }else {
-            req.setMatchDay(DatePattern.NORM_DATE_FORMAT.format(tourMatchEntity.getEndTime()));
+        int needSize = Math.min(req.getSize(),50);
+        List<WorldTennisMatchEntity> handlerResult = new ArrayList<>(queryLivingState(tourMatchEntity, needSize));
+        log.info("查询的进行中的长度{}",handlerResult.size());
+        if (handlerResult.size() < needSize){
+            handlerResult.addAll(queryEndMatch(tourMatchEntity,needSize));
         }
-        req.setOrderBySeq(true);
-        return queryWorldMatch(req);
+        return queryWorldMatchFormDb(handlerResult);
+    }
+
+
+    /**
+     * 查询进行中的比萨
+     *
+     * @param req
+     * @return
+     */
+    @Override
+    public List<WorldMatchInfo> queryRecommendWorldMatch(WorldMatchReq req) {
+        List<WorldTourMatchEntity> tourMatchList = iWorldTourMatchDal.queryByKeys(null,String.valueOf(DateUtil.year(new Date())), Arrays.asList(1,2));
+        // 查询进行中的赛事
+        if (CollUtil.isEmpty(tourMatchList)){
+            return new ArrayList<>();
+        }
+        Date now = new Date();
+        List<String> needData = new ArrayList<>();
+        needData.add(DatePattern.NORM_DATE_FORMAT.format(now));
+        needData.add(DatePattern.NORM_DATE_FORMAT.format(DateUtil.offsetDay(now,-1)));
+        WorldTourMatchEntity tourMatchEntity = tourMatchList.get(tourMatchList.size() - 1);
+        LambdaQueryWrapper<WorldTennisMatchEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(WorldTennisMatchEntity::getMatchTypeId,tourMatchEntity.getTourId())
+                .in(WorldTennisMatchEntity::getMatchDay,needData)
+                .gt(WorldTennisMatchEntity::getSeq,950)
+                .orderByDesc(WorldTennisMatchEntity::getSeq)
+                .orderByAsc(WorldTennisMatchEntity::getMatchTime)
+                .last(" limit " + req.getSize());
+        List<WorldTennisMatchEntity> data = iWorldTennisMatchDal.list(lqw);
+        return queryWorldMatchFormDb(data);
+    }
+
+
+
+
+    private  List<WorldTennisMatchEntity> queryLivingState(WorldTourMatchEntity tourMatchEntity,int needSize){
+        Date now = new Date();
+       List<String> needData = new ArrayList<>();
+       needData.add(DatePattern.NORM_DATE_FORMAT.format(now));
+       needData.add(DatePattern.NORM_DATE_FORMAT.format(DateUtil.offsetDay(now,-1)));
+        // 查询进行中的比赛
+        LambdaQueryWrapper<WorldTennisMatchEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(WorldTennisMatchEntity::getMatchTypeId,tourMatchEntity.getTourId())
+                .in(WorldTennisMatchEntity::getMatchStatus,Arrays.asList(MatchStatusEnums.LIVING.getType(),MatchStatusEnums.UN_BEGIN.getType(),MatchStatusEnums.NON_STATE.getType()))
+                .in(WorldTennisMatchEntity::getMatchDay,needData)
+                .orderByDesc(WorldTennisMatchEntity::getSeq)
+                .orderByDesc(WorldTennisMatchEntity::getMatchStatus)
+                .orderByAsc(WorldTennisMatchEntity::getMatchTime);
+        lqw.last(" limit " + needSize);
+        List<WorldTennisMatchEntity> data = iWorldTennisMatchDal.list(lqw);
+        if (data == null){
+            data = new ArrayList<>();
+        }
+        return data;
+    }
+    private  List<WorldTennisMatchEntity> queryEndMatch(WorldTourMatchEntity tourMatchEntity,int needSize){
+        Date now = new Date();
+        List<String> needData = new ArrayList<>();
+        if (DateUtil.compare(now,tourMatchEntity.getEndTime()) <=0){
+            needData.add(DatePattern.NORM_DATE_FORMAT.format(now));
+            needData.add(DatePattern.NORM_DATE_FORMAT.format(DateUtil.offsetDay(now,-1)));
+        }else {
+            needData.add(DatePattern.NORM_DATE_FORMAT.format(tourMatchEntity.getEndTime()));
+        }
+        // 查询进行中的比赛
+        LambdaQueryWrapper<WorldTennisMatchEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(WorldTennisMatchEntity::getMatchTypeId,tourMatchEntity.getTourId())
+                .eq(WorldTennisMatchEntity::getMatchStatus,MatchStatusEnums.END.getType())
+                .in(WorldTennisMatchEntity::getMatchDay,needData)
+                .orderByDesc(WorldTennisMatchEntity::getSeq)
+                .orderByDesc(WorldTennisMatchEntity::getMatchTime);
+
+        lqw.last(" limit " + needSize);
+        List<WorldTennisMatchEntity> data = iWorldTennisMatchDal.list(lqw);
+        if (data == null){
+            data = new ArrayList<>();
+        }
+        return data;
     }
 
     /**
@@ -121,10 +196,8 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      */
     @Override
     public List<WorldMatchInfo> queryWorldMatch(WorldMatchReq req) {
-        Date now = new Date();
-        log.info(">>>>>queryWorldMatch req={}",req.getMatchDay());
-        if ("2023-05-21".equals(req.getMatchDay())){
-            req.setMatchDay(DatePattern.NORM_DATE_FORMAT.format(now));
+        if (StrUtil.isEmpty(req.getMatchDay()) ||  "2023-05-21".equals(req.getMatchDay())){
+            req.setMatchDay(DatePattern.NORM_DATE_FORMAT.format(new Date()));
         }
         return queryWorldMatchFormDb(req);
     }
@@ -168,6 +241,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         return queryWorldMatchFormDb(matchEntityPage.getRecords());
     }
     private List<WorldMatchInfo> queryWorldMatchFormDb(List<WorldTennisMatchEntity> matchList){
+        if (CollUtil.isEmpty(matchList)){
+            return new ArrayList<>();
+        }
         List<String> matchIds = matchList.stream().map(WorldTennisMatchEntity::getMatchId).collect(Collectors.toList());
 
         List<WorldMatchInfo> list = new ArrayList<>();
@@ -179,6 +255,7 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         for (WorldTennisMatchEntity worldTennisMatchEntity:matchList){
             WorldMatchInfo worldMatchInfo = new WorldMatchInfo();
             BeanUtils.copyProperties(worldTennisMatchEntity,worldMatchInfo);
+            worldMatchInfo.setRecommendFlag(worldMatchInfo.getSeq() != null && worldMatchInfo.getSeq() > 950 ? 1 : 0);
             List<WorldTennisMatchPlayerEntity> tennisMatchPlayer = matchPlayer.get(worldMatchInfo.getMatchId());
             if (CollUtil.isEmpty(tennisMatchPlayer)){
                 continue;

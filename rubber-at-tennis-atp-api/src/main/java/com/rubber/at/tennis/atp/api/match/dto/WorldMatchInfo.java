@@ -108,8 +108,15 @@ public class WorldMatchInfo {
     private String usedTime;
 
 
+    /**
+     * 优先级
+     */
+    private Integer seq;
 
-
+    /**
+     * 是否推荐
+     */
+    private Integer recommendFlag;
 
 
     /**

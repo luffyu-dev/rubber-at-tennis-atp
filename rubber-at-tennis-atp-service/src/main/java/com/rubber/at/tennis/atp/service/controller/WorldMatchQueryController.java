@@ -1,6 +1,8 @@
 package com.rubber.at.tennis.atp.service.controller;
 
 import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
+import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
+import com.rubber.at.tennis.atp.api.match.enums.MatchStatusEnums;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
 import com.rubber.base.components.util.result.ResultMsg;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author luffyu
@@ -60,6 +64,16 @@ public class WorldMatchQueryController {
     public ResultMsg queryLivingByPage(@RequestBody WorldMatchReq req){
         // 兼容性查询 后期删掉
         return ResultMsg.success(worldMatchQueryApi.queryLivingWorldMatch(req));
+    }
+
+
+    /**
+     * 查询推荐的比赛
+     */
+    @PostMapping("/query-recommend")
+    public ResultMsg queryRecommend(@RequestBody WorldMatchReq req){
+        // 兼容性查询 后期删掉
+        return ResultMsg.success(worldMatchQueryApi.queryRecommendWorldMatch(req));
     }
 
 

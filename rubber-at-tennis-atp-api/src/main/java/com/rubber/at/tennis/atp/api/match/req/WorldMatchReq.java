@@ -32,6 +32,12 @@ public class WorldMatchReq extends BaseRequestPage {
      */
     private String matchDay;
 
+
+    /**
+     * 比赛所在天数集合
+     */
+    private List<String> matchDayList;
+
     /**
      * 是否双打
      */

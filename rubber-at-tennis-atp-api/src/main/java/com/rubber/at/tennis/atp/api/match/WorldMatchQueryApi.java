@@ -40,6 +40,15 @@ public interface WorldMatchQueryApi {
 
 
     /**
+     * 查询首页比赛数据
+     * @param req
+     * @return
+     */
+    List<WorldMatchInfo> queryRecommendWorldMatch(WorldMatchReq req);
+
+
+
+    /**
      * 查询所有的比赛数据信息
      * @param req 当前的请求
      * @return 返回球赛信息
