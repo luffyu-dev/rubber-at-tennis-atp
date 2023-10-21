@@ -122,4 +122,20 @@ public class WorldTourMatchEntity extends BaseEntity {
     private Date updateTime;
 
 
+    /**
+     * 轮次list
+     */
+    @TableField("Fmatch_round_list")
+    private String matchRoundList;
+
+
+    /**
+     * 推荐标记
+     * 1表示走推荐
+     * 0表示不走推荐
+     */
+    @TableField("Frecommend_flag")
+    private Integer recommendFlag;
+
+
 }

@@ -6,6 +6,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
 import com.rubber.at.tennis.atp.api.player.request.PagePlayerIdRequest;
 import com.rubber.at.tennis.atp.api.player.request.PlayerIdRequest;
 import com.rubber.at.tennis.atp.api.base.SearchQueryRequest;
@@ -52,6 +53,10 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
 
     @Autowired
     private PlayerMatchService playerMatchService;
+
+    @Autowired
+    private WorldMatchQueryApi worldMatchQueryApi;
+
 
     /**
      * 球员的缓存信息
@@ -165,6 +170,10 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
         if (playerIdRequest.getUid() != null){
             playerInfoDetail.setFollowed(userFollowPlayerApplyService.isFollowed(playerIdRequest));
         }
+        // 查询比赛数据
+        if (playerIdRequest.getQueryMatchSize() != null && playerIdRequest.getQueryMatchSize() > 0){
+            playerInfoDetail.setMatchList(worldMatchQueryApi.queryWorldMatchByPlayer(playerInfoDetail.getPlayerId(),playerIdRequest.getQueryMatchSize()));
+        }
         return playerInfoDetail;
     }
 
@@ -206,8 +215,12 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
                     .or()
                     .like(PlayerInfoEntity::getNationChineseName, "%" + request.getSearchValue() + "%");
         }
-        lqw.eq(PlayerInfoEntity::getPlayerType,playerTypeEnums.toString())
-                .orderByDesc(PlayerInfoEntity::getSeqWeight);
+        lqw.eq(PlayerInfoEntity::getPlayerType,playerTypeEnums.toString());
+        if ("recommendScore".equalsIgnoreCase(request.getSeqType())){
+            lqw.orderByDesc(PlayerInfoEntity::getRecommendScore);
+        }else {
+            lqw.orderByDesc(PlayerInfoEntity::getSeqWeight);
+        }
         iPlayerInfoDal.page(page,lqw);
         return page;
     }

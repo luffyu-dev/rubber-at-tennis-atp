@@ -44,4 +44,22 @@ public class WorldTourMatchDalImpl extends BaseAdminService<WorldTourMatchMapper
         lqw.orderByAsc(WorldTourMatchEntity::getBeginTime);
         return list(lqw);
     }
+
+    /**
+     * @param year
+     * @param status
+     * @return
+     */
+    @Override
+    public List<WorldTourMatchEntity> queryRecommendList(String year, List<Integer> status) {
+        LambdaQueryWrapper<WorldTourMatchEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(WorldTourMatchEntity::getTourYear,year)
+                .eq(WorldTourMatchEntity::getRecommendFlag,1);
+
+        if (CollUtil.isNotEmpty(status)){
+            lqw.in(WorldTourMatchEntity::getStatus,status);
+        }
+        lqw.orderByDesc(WorldTourMatchEntity::getBeginTime);
+        return list(lqw);
+    }
 }

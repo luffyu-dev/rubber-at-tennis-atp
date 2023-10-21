@@ -23,4 +23,7 @@ public interface IWorldTourMatchDal extends IBaseAdminService<WorldTourMatchEnti
 
     List<WorldTourMatchEntity> queryByKeys(String tourId,String year,List<Integer> status);
 
+
+    List<WorldTourMatchEntity> queryRecommendList(String year,List<Integer> status);
+
 }

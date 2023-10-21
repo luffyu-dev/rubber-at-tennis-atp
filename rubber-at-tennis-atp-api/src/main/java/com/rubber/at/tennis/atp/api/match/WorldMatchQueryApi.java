@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.api.match;
 
+import com.rubber.at.tennis.atp.api.match.dto.RecommendWorldMatchDto;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
@@ -40,11 +41,22 @@ public interface WorldMatchQueryApi {
 
 
     /**
+     * 查询用户的比赛数据
+     *
+     * @param playerKey 名称或者id
+     * @param size
+     * @return
+     */
+    List<WorldMatchInfo> queryWorldMatchByPlayer(String playerKey,Integer size);
+
+
+
+    /**
      * 查询首页比赛数据
      * @param req
      * @return
      */
-    List<WorldMatchInfo> queryRecommendWorldMatch(WorldMatchReq req);
+    List<RecommendWorldMatchDto> queryRecommendWorldMatch(WorldMatchReq req);
 
 
 

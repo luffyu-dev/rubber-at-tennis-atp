@@ -22,4 +22,11 @@ public class PlayerIdRequest extends BaseUserSession {
      */
     private String playerType;
 
+
+    /**
+     * 是否查询比赛详情
+     * 1表示查询 0表示不查询 默认不查
+     */
+    private Integer queryMatchSize;
+
 }

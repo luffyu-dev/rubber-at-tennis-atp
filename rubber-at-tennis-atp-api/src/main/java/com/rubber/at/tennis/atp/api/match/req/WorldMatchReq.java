@@ -72,4 +72,10 @@ public class WorldMatchReq extends BaseRequestPage {
      * 是否按照优先级排序
      */
     private boolean orderBySeq;
+
+
+    /**
+     * 比赛轮次
+     */
+    private String matchRound;
 }

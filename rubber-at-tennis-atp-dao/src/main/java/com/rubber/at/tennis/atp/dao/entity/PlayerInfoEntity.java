@@ -224,4 +224,9 @@ public class PlayerInfoEntity extends BaseEntity {
     private String tags;
 
 
+    /**
+     * 推荐分
+     */
+    @TableField("Frecommend_score")
+    private Integer recommendScore;
 }

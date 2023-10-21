@@ -1,7 +1,10 @@
 package com.rubber.at.tennis.atp.api.player.dto;
 
+import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 
 /**
@@ -13,6 +16,10 @@ import lombok.EqualsAndHashCode;
 public class PlayerInfoDetail extends PlayerInfoDto{
 
 
+    /**
+     * 最近的比赛详情
+     */
+    private List<WorldMatchInfo> matchList;
 
 
 }

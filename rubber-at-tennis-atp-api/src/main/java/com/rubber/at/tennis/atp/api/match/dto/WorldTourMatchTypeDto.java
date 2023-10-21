@@ -95,4 +95,17 @@ public class WorldTourMatchTypeDto {
     private Integer status;
 
 
+    /**
+     * 轮次信息
+     */
+    private List<MatchRoundDto> matchRoundList;
+
+
+    /**
+     * 推荐标记
+     * 1表示走推荐
+     * 0表示不走推荐
+     */
+    private Integer recommendFlag;
+
 }

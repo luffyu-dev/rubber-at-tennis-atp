@@ -165,4 +165,10 @@ public class PlayerInfoDto {
      */
     private boolean followed;
 
+
+    /**
+     * 推荐分
+     */
+    private Integer recommendScore;
+
 }
