@@ -4,7 +4,8 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
@@ -12,20 +13,17 @@ import com.rubber.at.tennis.atp.api.match.dto.*;
 import com.rubber.at.tennis.atp.api.match.enums.MatchStatusEnums;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
-import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchDal;
-import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchPlayerDal;
-import com.rubber.at.tennis.atp.dao.dal.IWorldTennisMatchScoreRecordDal;
-import com.rubber.at.tennis.atp.dao.dal.IWorldTourMatchDal;
-import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchEntity;
-import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchPlayerEntity;
-import com.rubber.at.tennis.atp.dao.entity.WorldTennisMatchScoreRecordEntity;
-import com.rubber.at.tennis.atp.dao.entity.WorldTourMatchEntity;
+import com.rubber.at.tennis.atp.api.player.dto.PlayerH2HDto;
+import com.rubber.at.tennis.atp.dao.dal.*;
+import com.rubber.at.tennis.atp.dao.entity.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,6 +47,12 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
     @Autowired
     private IWorldTennisMatchScoreRecordDal iWorldTennisMatchScoreRecordDal;
+
+    @Autowired
+    private IWorldTennisMatchLivingDataDal iWorldTennisMatchLivingDataDal;
+
+    @Autowired
+    private IPlayerHtohInfoDal iPlayerHtohInfoDal;
 
     /**
      * 查询巡回赛的基础信息
@@ -78,7 +82,11 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      */
     @Override
     public List<WorldTourMatchTypeDto> queryTourMatch(WorldTourMatchReq req) {
-        List<WorldTourMatchEntity> tourMatchEntityList = iWorldTourMatchDal.queryByKeys(req.getTourId(),String.valueOf(DateUtil.year(new Date())),req.getStatusList());
+        List<Integer> statusList = req.getStatusList();
+        if (CollUtil.isEmpty(statusList)){
+            statusList = Arrays.asList(1,2);
+        }
+        List<WorldTourMatchEntity> tourMatchEntityList = iWorldTourMatchDal.queryByKeys(req.getTourId(),String.valueOf(DateUtil.year(new Date())),statusList);
         if (CollUtil.isEmpty(tourMatchEntityList)){
             return new ArrayList<>();
         }
@@ -93,13 +101,21 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      */
     @Override
     public List<WorldMatchInfo> queryLivingWorldMatch(WorldMatchReq req) {
-        List<WorldTourMatchEntity> tourMatchList = iWorldTourMatchDal.queryByKeys(null,String.valueOf(DateUtil.year(new Date())), Arrays.asList(1,2));
+        List<WorldTourMatchEntity> tourMatchList = iWorldTourMatchDal.queryRecommendList(String.valueOf(DateUtil.year(new Date())), Arrays.asList(1,2));
         // 查询进行中的赛事
         if (CollUtil.isEmpty(tourMatchList)){
             return new ArrayList<>();
         }
-        WorldTourMatchEntity tourMatchEntity = tourMatchList.get(tourMatchList.size() - 1);
-        return doQueryWorldMathByTour(req,tourMatchEntity);
+        List<WorldMatchInfo> worldMatchInfos = new ArrayList<>();
+
+        for (WorldTourMatchEntity worldTourMatchEntity:tourMatchList){
+            List<WorldMatchInfo> matchInfoList = doQueryWorldMathByTour(req,worldTourMatchEntity);
+            if (CollUtil.isEmpty(matchInfoList)){
+                continue;
+            }
+            worldMatchInfos.addAll(matchInfoList);
+        }
+        return worldMatchInfos;
     }
 
 
@@ -182,14 +198,11 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
     private  List<WorldTennisMatchEntity> queryLivingByPlayerId(String playerKeys,int needSize){
         Date now = new Date();
-        List<String> needData = new ArrayList<>();
-        needData.add(DatePattern.NORM_DATE_FORMAT.format(now));
-        needData.add(DatePattern.NORM_DATE_FORMAT.format(DateUtil.offsetDay(now,-1)));
         // 查询最近15天的比赛数据
         LambdaQueryWrapper<WorldTennisMatchEntity> lqw = new LambdaQueryWrapper<>();
         lqw.like(WorldTennisMatchEntity::getIndexKey,"%"+playerKeys+"%")
-                .gt(WorldTennisMatchEntity::getMatchTime,DateUtil.offsetDay(new Date(),-15))
-                .orderByAsc(WorldTennisMatchEntity::getMatchTime);
+                .gt(WorldTennisMatchEntity::getMatchTime,DateUtil.offsetDay(new Date(),-30))
+                .orderByDesc(WorldTennisMatchEntity::getMatchTime);
         lqw.last(" limit " + needSize);
         List<WorldTennisMatchEntity> data = iWorldTennisMatchDal.list(lqw);
         if (data == null){
@@ -261,6 +274,12 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         queryWorldMatchRecord(worldMatchInfo);
         // 处理每盘的数据
         handlerLivingSetData(worldMatchInfo);
+
+        // 查询h2h
+        queryPlayerH2h(worldMatchInfo);
+        // 查询比赛实时数据
+        queryMatchLive(worldMatchInfo);
+
         return worldMatchInfo;
     }
 
@@ -525,4 +544,83 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         }
         return Integer.parseInt(setNumA) > Integer.parseInt(setNumB);
     }
+
+
+    /**
+     * 查询h2h信息
+     * @param worldMatchInfo
+     */
+    private void queryPlayerH2h(WorldMatchInfo worldMatchInfo){
+        LambdaQueryWrapper<PlayerHtohInfoEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(PlayerHtohInfoEntity::getAPlayerId,worldMatchInfo.getAPlayer().getPlayerId())
+                .eq(PlayerHtohInfoEntity::getBPlayerId,worldMatchInfo.getBPlayer().getPlayerId())
+                .last(" limit 1");
+        PlayerHtohInfoEntity infoEntity = iPlayerHtohInfoDal.getOne(lqw);
+        if (infoEntity != null){
+            PlayerH2HDto dto = new PlayerH2HDto();
+            BeanUtils.copyProperties(infoEntity,dto);
+            if (StrUtil.isNotEmpty(infoEntity.getOldMatchInfo())){
+                dto.setOldMatchList(JSON.parseArray(infoEntity.getOldMatchInfo(), PlayerH2HDto.OldMatchDto.class));
+            }
+            worldMatchInfo.setH2HDto(dto);
+        }
+
+    }
+
+
+    private void queryMatchLive(WorldMatchInfo worldMatchInfo){
+        try {
+            LambdaQueryWrapper<WorldTennisMatchLivingDataEntity> lqw = new LambdaQueryWrapper<>();
+            lqw.eq(WorldTennisMatchLivingDataEntity::getMatchId, worldMatchInfo.getMatchId())
+                    .last(" limit 1");
+            WorldTennisMatchLivingDataEntity entity = iWorldTennisMatchLivingDataDal.getOne(lqw);
+            if (entity != null) {
+                worldMatchInfo.setLivingDataList(JSON.parseArray(entity.getMatchLivingData(), MatchResultDataDto.class));
+                if (CollUtil.isNotEmpty(worldMatchInfo.getLivingDataList())) {
+                    for (MatchResultDataDto dataDto : worldMatchInfo.getLivingDataList()) {
+                        if (dataDto != null && CollUtil.isNotEmpty(dataDto.getSetDataList())) {
+                            for (MatchResultDataDto.MatchSetBean setBean : dataDto.getSetDataList()) {
+                                handlerMatchSetData(setBean);
+                            }
+                        }
+                    }
+
+                }
+            }
+        }catch (Exception e){
+            log.error("查询比赛实时数据宜昌",e);
+        }
+    }
+
+
+    private void handlerMatchSetData(MatchResultDataDto.MatchSetBean setBean){
+        if (setBean.getAPlayerData().contains("%") && setBean.getBPlayerData().contains("%")){
+            int aPoint = Integer.parseInt(setBean.getAPlayerData().substring(0,setBean.getAPlayerData().indexOf("%")));
+            int bPoint = Integer.parseInt(setBean.getBPlayerData().substring(0,setBean.getBPlayerData().indexOf("%")));
+            setBean.setAPlayerPoint(aPoint);
+            setBean.setBPlayerPoint(bPoint);
+        }
+        if (StrUtil.isNumeric(setBean.getAPlayerData()) && StrUtil.isNumeric(setBean.getBPlayerData())){
+            Double xa = Double.parseDouble(setBean.getAPlayerData());
+            Double xb = Double.parseDouble(setBean.getBPlayerData());
+            BigDecimal all =new BigDecimal(xa + xb);
+            if (all.doubleValue() <= 0){
+                setBean.setAPlayerPoint(0);
+                setBean.setBPlayerPoint(0);
+            }else {
+                Integer aPoint = BigDecimal.valueOf(xa).divide(all,2, RoundingMode.UP).multiply(new BigDecimal(100)).intValue();
+                Integer bPoint =BigDecimal.valueOf(xb).divide(all,2, RoundingMode.UP).multiply(new BigDecimal(100)).intValue();
+                setBean.setAPlayerPoint(aPoint);
+                setBean.setBPlayerPoint(bPoint);
+            }
+        }
+        if (setBean.getAPlayerPoint() != null && setBean.getBPlayerPoint() != null){
+            if (setBean.getAPlayerPoint().equals(setBean.getBPlayerPoint())){
+                setBean.setMaxPlayer("all");
+            }else {
+                setBean.setMaxPlayer(setBean.getAPlayerPoint() > setBean.getBPlayerPoint() ? "a":"b");
+            }
+        }
+    }
+
 }

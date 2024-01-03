@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.api.match.dto;
 
+import com.rubber.at.tennis.atp.api.player.dto.PlayerH2HDto;
 import lombok.Data;
 
 import java.util.Date;
@@ -140,4 +141,15 @@ public class WorldMatchInfo {
      */
     private List<WorldMatchScoreRecordDto> recordDtoList;
 
+
+    /**
+     * H2H的数据信息
+     */
+    private PlayerH2HDto h2HDto;
+
+
+    /**
+     * 比赛数据结果
+     */
+    private List<MatchResultDataDto> livingDataList;
 }

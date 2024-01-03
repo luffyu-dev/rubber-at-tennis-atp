@@ -171,4 +171,11 @@ public class PlayerInfoDto {
      */
     private Integer recommendScore;
 
+
+    /**
+     * 是否存在比赛数据
+     * 1表示存在 0表示不存在
+     */
+    private Integer livingMatchFlag;
+
 }

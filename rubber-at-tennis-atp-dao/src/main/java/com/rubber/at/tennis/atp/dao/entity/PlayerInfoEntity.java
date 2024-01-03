@@ -229,4 +229,13 @@ public class PlayerInfoEntity extends BaseEntity {
      */
     @TableField("Frecommend_score")
     private Integer recommendScore;
+
+
+    /**
+     * 最后一次比赛时间
+     */
+    @TableField("Flast_match_time")
+    private Date lastMatchTime;
+
+
 }

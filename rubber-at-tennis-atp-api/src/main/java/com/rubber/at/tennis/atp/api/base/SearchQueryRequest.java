@@ -34,6 +34,12 @@ public class SearchQueryRequest extends BaseUserSession {
 
 
     /**
+     * 是否只查询关注的球员
+     */
+    private String playerType;
+
+
+    /**
      * 查询的排序字段
      * seq_weight
      * recommend_score

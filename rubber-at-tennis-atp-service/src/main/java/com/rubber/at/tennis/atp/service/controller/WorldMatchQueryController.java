@@ -70,8 +70,18 @@ public class WorldMatchQueryController {
     /**
      * 查询推荐的比赛
      */
-    @PostMapping("/recommend")
+    @PostMapping("/query-recommend")
     public ResultMsg queryRecommend(@RequestBody WorldMatchReq req){
+        // 兼容性查询 后期删掉
+        return ResultMsg.success();
+    }
+
+
+    /**
+     * 查询推荐的比赛
+     */
+    @PostMapping("/recommend")
+    public ResultMsg recommendMatch(@RequestBody WorldMatchReq req){
         // 兼容性查询 后期删掉
         return ResultMsg.success(worldMatchQueryApi.queryRecommendWorldMatch(req));
     }

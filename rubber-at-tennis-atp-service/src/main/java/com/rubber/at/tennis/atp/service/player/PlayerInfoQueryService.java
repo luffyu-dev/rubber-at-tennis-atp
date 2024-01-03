@@ -3,6 +3,7 @@ package com.rubber.at.tennis.atp.service.player;
 import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.FIFOCache;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -61,7 +62,7 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
     /**
      * 球员的缓存信息
      */
-    private FIFOCache<String,ResultPage<PlayerInfoDto>> playerCache = CacheUtil.newFIFOCache(10,6 * 24 * 60 * 1000);
+    private FIFOCache<String,ResultPage<PlayerInfoDto>> playerCache = CacheUtil.newFIFOCache(10,12 * 60 * 1000);
 
 
     /**
@@ -72,28 +73,17 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
      */
     @Override
     public ResultPage<PlayerInfoDto> queryAtpInfoPage(SearchQueryRequest request) {
-        String cacheKey = "ATP:PLAYER:"+request.getPage();
-        ResultPage<PlayerInfoDto> resultPage = null;
-        boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
-        // 前两页命中换成
-        if (isNeedCache){
-            log.info("命中atp球员信息的缓存信息{}",request);
-            resultPage = playerCache.get(cacheKey);
+
+        // 球员分页查询
+        Page<PlayerInfoEntity> page = queryByPage(request, PlayerTypeEnums.atp);
+        // 排名查询
+        Map<String, PlayerRankInfoEntity> nowPlayerRank = new HashMap<>();
+        if (CollUtil.isNotEmpty(page.getRecords())) {
+            List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
+            nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds, TaskTypeEnums.ATP_RANK);
         }
-        if (resultPage == null) {
-            // 球员分页查询
-            Page<PlayerInfoEntity> page = queryByPage(request, PlayerTypeEnums.atp);
-            // 排名查询
-            Map<String, PlayerRankInfoEntity> nowPlayerRank = new HashMap<>();
-            if (CollUtil.isNotEmpty(page.getRecords())) {
-                List<String> playerIds = page.getRecords().stream().map(PlayerInfoEntity::getPlayerId).collect(Collectors.toList());
-                nowPlayerRank = playerRankInfoService.queryRankInfo(playerIds, TaskTypeEnums.ATP_RANK);
-            }
-            resultPage = convertDtoBatch(page, nowPlayerRank);
-            if (isNeedCache){
-                playerCache.put(cacheKey,resultPage);
-            }
-        }
+        ResultPage<PlayerInfoDto> resultPage = convertDtoBatch(page, nowPlayerRank);
+
         // 查询是否有关注
         handlerFollowed(request,resultPage);
         return resultPage;
@@ -215,7 +205,9 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
                     .or()
                     .like(PlayerInfoEntity::getNationChineseName, "%" + request.getSearchValue() + "%");
         }
-        lqw.eq(PlayerInfoEntity::getPlayerType,playerTypeEnums.toString());
+        if (playerTypeEnums != null){
+            lqw.eq(PlayerInfoEntity::getPlayerType,playerTypeEnums.toString());
+        }
         if ("recommendScore".equalsIgnoreCase(request.getSeqType())){
             lqw.orderByDesc(PlayerInfoEntity::getRecommendScore);
         }else {
@@ -270,6 +262,13 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
     private PlayerInfoDto convertDto(PlayerInfoEntity playerInfo,PlayerRankInfoEntity rankInfo){
         PlayerInfoDto dto = new PlayerInfoDto();
         BeanUtils.copyProperties(playerInfo,dto);
+
+        if (playerInfo.getLastMatchTime() != null){
+            long day = DateUtil.betweenDay(new Date(),playerInfo.getLastMatchTime(),true);
+            if ( day > -15 && day < 15){
+                dto.setLivingMatchFlag(1);
+            }
+        }
         if (rankInfo != null){
             PlayerRankInfoDto rankInfoDto = new PlayerRankInfoDto();
             BeanUtils.copyProperties(rankInfo,rankInfoDto);
