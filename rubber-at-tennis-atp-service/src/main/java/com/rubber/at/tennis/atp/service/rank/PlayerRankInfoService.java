@@ -64,14 +64,14 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
         boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
         if (isNeedCache){
             log.info("命中atp球员实时排名信息的缓存信息{}",request);
-            resultPage = rankCache.get(cacheKey);
+            //resultPage = rankCache.get(cacheKey);
         }
         if (resultPage == null){
             TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.ATP_RANK);
             Page<PlayerRankInfoEntity> atpRankInfo = queryByPage(request, PlayerTypeEnums.atp, rankTask);
             resultPage =  convertDto(atpRankInfo,rankTask);
             if (isNeedCache && resultPage.getRecords() != null && request.getSize() == resultPage.getRecords().size()){
-                rankCache.put(cacheKey,resultPage);
+                //rankCache.put(cacheKey,resultPage);
             }
         }
         return resultPage;
@@ -91,14 +91,14 @@ public class PlayerRankInfoService implements PlayerRankInfoApi {
         boolean isNeedCache = request.getPage() <= 2 && StrUtil.isEmpty(request.getSearchValue());
         if (isNeedCache){
             log.info("命中wat球员实时排名信息的缓存信息{}",request);
-            resultPage = rankCache.get(cacheKey);
+            //resultPage = rankCache.get(cacheKey);
         }
         if (resultPage == null) {
             TaskInfoEntity rankTask = taskQueryService.getValidTask(TaskTypeEnums.WTA_RANK);
             Page<PlayerRankInfoEntity> wtaRankInfo = queryByPage(request, PlayerTypeEnums.wta, rankTask);
             resultPage = convertDto(wtaRankInfo, rankTask);
             if (isNeedCache  &&  resultPage.getRecords() != null && request.getSize() == resultPage.getRecords().size()){
-                rankCache.put(cacheKey,resultPage);
+                //rankCache.put(cacheKey,resultPage);
             }
         }
         return resultPage;

@@ -3,6 +3,7 @@ package com.rubber.at.tennis.atp.service.match;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -135,10 +136,10 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
     private List<WorldMatchInfo> doQueryWorldMathByTour(WorldMatchReq req,WorldTourMatchEntity tourMatchEntity){
         int needSize = Math.min(req.getSize(),50);
-        List<WorldTennisMatchEntity> handlerResult = new ArrayList<>(queryLivingState(tourMatchEntity, needSize));
+        List<WorldTennisMatchEntity> handlerResult = new ArrayList<>(queryLivingState(tourMatchEntity, needSize,req));
         log.info("查询的进行中的长度{}",handlerResult.size());
         if (handlerResult.size() < needSize){
-            handlerResult.addAll(queryEndMatch(tourMatchEntity,needSize));
+            handlerResult.addAll(queryEndMatch(tourMatchEntity,needSize,req));
         }
         return queryWorldMatchFormDb(handlerResult);
     }
@@ -172,7 +173,7 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
 
 
-    private  List<WorldTennisMatchEntity> queryLivingState(WorldTourMatchEntity tourMatchEntity,int needSize){
+    private  List<WorldTennisMatchEntity> queryLivingState(WorldTourMatchEntity tourMatchEntity,int needSize,WorldMatchReq req){
         Date now = new Date();
        List<String> needData = new ArrayList<>();
        needData.add(DatePattern.NORM_DATE_FORMAT.format(now));
@@ -185,6 +186,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
                 .orderByDesc(WorldTennisMatchEntity::getSeq)
                 .orderByDesc(WorldTennisMatchEntity::getMatchStatus)
                 .orderByAsc(WorldTennisMatchEntity::getMatchTime);
+        if ("home".equals(req.getInvoker())){
+            lqw.in(WorldTennisMatchEntity::getMatchGender, Arrays.asList("女单","男单","女双","男双"));
+        }
         lqw.last(" limit " + needSize);
         List<WorldTennisMatchEntity> data = iWorldTennisMatchDal.list(lqw);
         if (data == null){
@@ -214,7 +218,7 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
 
 
-    private  List<WorldTennisMatchEntity> queryEndMatch(WorldTourMatchEntity tourMatchEntity,int needSize){
+    private  List<WorldTennisMatchEntity> queryEndMatch(WorldTourMatchEntity tourMatchEntity,int needSize,WorldMatchReq req){
         Date now = new Date();
         List<String> needData = new ArrayList<>();
         if (DateUtil.compare(now,tourMatchEntity.getEndTime()) <=0){
@@ -230,7 +234,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
                 .in(WorldTennisMatchEntity::getMatchDay,needData)
                 .orderByDesc(WorldTennisMatchEntity::getSeq)
                 .orderByDesc(WorldTennisMatchEntity::getMatchTime);
-
+        if ("home".equals(req.getInvoker())){
+            lqw.in(WorldTennisMatchEntity::getMatchGender, Arrays.asList("女单","男单","女双","男双"));
+        }
         lqw.last(" limit " + needSize);
         List<WorldTennisMatchEntity> data = iWorldTennisMatchDal.list(lqw);
         if (data == null){

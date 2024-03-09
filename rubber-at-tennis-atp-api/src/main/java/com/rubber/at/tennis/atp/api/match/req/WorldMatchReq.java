@@ -18,7 +18,7 @@ public class WorldMatchReq extends BaseRequestPage {
     /**
      * 调用场景
      */
-    private String invokerScene;
+    private String invoker;
 
 
     /**
