@@ -1,6 +1,7 @@
 package com.rubber.at.tennis.atp.api.match;
 
 import com.rubber.at.tennis.atp.api.match.dto.RecommendWorldMatchDto;
+import com.rubber.at.tennis.atp.api.match.dto.TourInfoDayDto;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
@@ -16,6 +17,7 @@ public interface WorldMatchQueryApi {
 
 
     /**
+     * ok
      * 查询巡回赛的基础信息
      * @param req  当前的请求
      * @return 返回巡回赛详情
@@ -24,6 +26,7 @@ public interface WorldMatchQueryApi {
 
 
     /**
+     * ok
      * 查询所有巡回赛
      * @param req  当前的请求
      * @return 返回巡回赛详情
@@ -32,12 +35,11 @@ public interface WorldMatchQueryApi {
 
 
     /**
-     * 查询首页比赛数据
+     * 查询比赛的详细
      * @param req
      * @return
      */
-    List<WorldMatchInfo> queryLivingWorldMatch(WorldMatchReq req);
-
+    TourInfoDayDto queryTourListDay(WorldTourMatchReq req);
 
 
     /**
@@ -73,5 +75,8 @@ public interface WorldMatchQueryApi {
      * @return
      */
     WorldMatchInfo getLivingDetail(String matchId);
+
+
+
 
 }

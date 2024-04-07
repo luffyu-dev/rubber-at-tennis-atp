@@ -21,6 +21,13 @@ public class WorldTourMatchReq extends BaseRequestPage {
     private String tourId;
 
 
+
+    /**
+     * 更新的版本
+     */
+    private String updateVersion;
+
+
     /**
      * 比赛状态
      */

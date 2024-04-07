@@ -76,7 +76,7 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
     }
 
     /**
-     * 查询所有巡回赛
+     * 查询推荐行巡回赛巡回赛
      *
      * @param req 当前的请求
      * @return 返回巡回赛详情
@@ -87,7 +87,10 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         if (CollUtil.isEmpty(statusList)){
             statusList = Arrays.asList(1,2);
         }
-        List<WorldTourMatchEntity> tourMatchEntityList = iWorldTourMatchDal.queryByKeys(req.getTourId(),String.valueOf(DateUtil.year(new Date())),statusList);
+        if (StrUtil.isEmpty(req.getUpdateVersion())){
+            req.setUpdateVersion(createUpdateVersion());
+        }
+        List<WorldTourMatchEntity> tourMatchEntityList = iWorldTourMatchDal.queryByUpdateVersionSeq(req.getUpdateVersion(),"",statusList);
         if (CollUtil.isEmpty(tourMatchEntityList)){
             return new ArrayList<>();
         }
@@ -95,28 +98,19 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
     }
 
     /**
-     * 查询进行中的比萨
+     * 查询比赛的详细
      *
      * @param req
      * @return
      */
     @Override
-    public List<WorldMatchInfo> queryLivingWorldMatch(WorldMatchReq req) {
-        List<WorldTourMatchEntity> tourMatchList = iWorldTourMatchDal.queryRecommendList(String.valueOf(DateUtil.year(new Date())), Arrays.asList(1,2));
-        // 查询进行中的赛事
-        if (CollUtil.isEmpty(tourMatchList)){
-            return new ArrayList<>();
-        }
-        List<WorldMatchInfo> worldMatchInfos = new ArrayList<>();
-
-        for (WorldTourMatchEntity worldTourMatchEntity:tourMatchList){
-            List<WorldMatchInfo> matchInfoList = doQueryWorldMathByTour(req,worldTourMatchEntity);
-            if (CollUtil.isEmpty(matchInfoList)){
-                continue;
-            }
-            worldMatchInfos.addAll(matchInfoList);
-        }
-        return worldMatchInfos;
+    public TourInfoDayDto queryTourListDay(WorldTourMatchReq req) {
+        List<WorldTourMatchTypeDto> worldTourMatchTypeDtos = queryTourMatch(req);
+        TourInfoDayDto dto = new TourInfoDayDto();
+        dto.setTourList(worldTourMatchTypeDtos);
+        dto.setOnDay(req.getUpdateVersion());
+        dto.setDayInfo(createTourDayList());
+        return dto;
     }
 
 
@@ -290,6 +284,8 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
     }
 
 
+
+
     /**
      * 查询比赛详情
      * @param req
@@ -439,7 +435,11 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         if (StrUtil.isNotEmpty(entity.getMatchRoundList())){
             dto.setMatchRoundList(JSON.parseArray(entity.getMatchRoundList(), MatchRoundDto.class));
         }
-
+        if (StrUtil.isNotEmpty(entity.getLogo())){
+            String[] split = entity.getLogo().split(",");
+            dto.setLogo(split[0]);
+            dto.setLogoList(Arrays.asList(split));
+        }
         dto.setMatchDays(dateStr);
         return dto;
     }
@@ -627,6 +627,21 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
                 setBean.setMaxPlayer(setBean.getAPlayerPoint() > setBean.getBPlayerPoint() ? "a":"b");
             }
         }
+    }
+
+
+    private String createUpdateVersion(){
+        return DateUtil.format(new Date(), DatePattern.NORM_DATE_PATTERN);
+    }
+
+    private List<DayInfoDto> createTourDayList(){
+        List<DayInfoDto> dayInfoDtos = new ArrayList<>();
+        Date now = new Date();
+        for (int i=-10;i<2;i++){
+            Date day = DateUtil.offsetDay(now,i);
+            dayInfoDtos.add(new DayInfoDto(day));
+        }
+        return dayInfoDtos;
     }
 
 }

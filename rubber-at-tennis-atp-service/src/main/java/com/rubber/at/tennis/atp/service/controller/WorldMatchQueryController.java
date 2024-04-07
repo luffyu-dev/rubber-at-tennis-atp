@@ -1,5 +1,6 @@
 package com.rubber.at.tennis.atp.service.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.enums.MatchStatusEnums;
@@ -31,7 +32,7 @@ public class WorldMatchQueryController {
 
 
     /**
-     * 排名搜索
+     * 查询比赛的详细信息
      */
     @PostMapping("/tour-info")
     public ResultMsg queryTourInfo(@RequestBody WorldTourMatchReq req){
@@ -48,6 +49,15 @@ public class WorldMatchQueryController {
     }
 
 
+    /**
+     * 排名搜索
+     */
+    @PostMapping("/tour-list-day")
+    public ResultMsg queryTourDayList(@RequestBody WorldTourMatchReq req){
+        return ResultMsg.success(worldMatchQueryApi.queryTourListDay(req));
+    }
+
+
 
     /**
      * 查询比赛的数据信息
@@ -56,16 +66,6 @@ public class WorldMatchQueryController {
     public ResultMsg queryByPage(@RequestBody WorldMatchReq req){
         // 兼容性查询 后期删掉
         return ResultMsg.success(worldMatchQueryApi.queryWorldMatch(req));
-    }
-
-
-    /**
-     * 获取全部进行中的比赛
-     */
-    @PostMapping("/query-living")
-    public ResultMsg queryLivingByPage(@RequestBody WorldMatchReq req){
-        // 兼容性查询 后期删掉
-        return ResultMsg.success(worldMatchQueryApi.queryLivingWorldMatch(req));
     }
 
 

@@ -49,6 +49,11 @@ public class WorldTourMatchTypeDto {
     private String logo;
 
     /**
+     * logo多个
+     */
+    private List<String> logoList;
+
+    /**
      * 赛事大图
      */
     private String homeImg;

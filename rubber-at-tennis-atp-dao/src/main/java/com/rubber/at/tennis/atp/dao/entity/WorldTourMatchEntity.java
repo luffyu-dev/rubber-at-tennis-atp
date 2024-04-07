@@ -138,4 +138,16 @@ public class WorldTourMatchEntity extends BaseEntity {
     private Integer recommendFlag;
 
 
+    /**
+     * 排序字段
+     */
+    @TableField("Fseq")
+    private Integer seq;
+
+    /**
+     * 版本更新
+     */
+    @TableField("Fupdate_version")
+    private String updateVersion;
+
 }
