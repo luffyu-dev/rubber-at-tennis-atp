@@ -4,6 +4,7 @@ import com.rubber.at.tennis.atp.api.match.dto.RecommendWorldMatchDto;
 import com.rubber.at.tennis.atp.api.match.dto.TourInfoDayDto;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
+import com.rubber.at.tennis.atp.api.match.req.LiveMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
 
@@ -15,14 +16,6 @@ import java.util.List;
  */
 public interface WorldMatchQueryApi {
 
-
-    /**
-     * ok
-     * 查询巡回赛的基础信息
-     * @param req  当前的请求
-     * @return 返回巡回赛详情
-     */
-    WorldTourMatchTypeDto queryTourMatchInfo(WorldTourMatchReq req);
 
 
     /**
@@ -74,7 +67,7 @@ public interface WorldMatchQueryApi {
      * 获取单个赛事的详情
      * @return
      */
-    WorldMatchInfo getLivingDetail(String matchId);
+    WorldMatchInfo getLivingDetail( LiveMatchReq req);
 
 
 

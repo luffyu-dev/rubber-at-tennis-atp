@@ -24,5 +24,10 @@
             <artifactId>base_mysql</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.rubber</groupId>
+            <artifactId>rubber-at-tennis-atp-api</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

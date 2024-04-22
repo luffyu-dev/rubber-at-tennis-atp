@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author luffyu
@@ -112,5 +113,12 @@ public class WorldTourMatchTypeDto {
      * 0表示不走推荐
      */
     private Integer recommendFlag;
+
+
+    /**
+     * 历史的比赛数据
+     * key为atp类型
+     */
+    private Map<String, List<PlayerTourMatchDto>> historyMatchResult;
 
 }

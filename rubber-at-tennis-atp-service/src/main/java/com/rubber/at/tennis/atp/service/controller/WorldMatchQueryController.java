@@ -1,9 +1,13 @@
 package com.rubber.at.tennis.atp.service.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.rubber.at.tennis.atp.api.match.WorldMatchQueryApi;
+import com.rubber.at.tennis.atp.api.match.WorldTourQueryApi;
+import com.rubber.at.tennis.atp.api.match.dto.PlayerTourMatchDto;
 import com.rubber.at.tennis.atp.api.match.dto.WorldMatchInfo;
 import com.rubber.at.tennis.atp.api.match.enums.MatchStatusEnums;
+import com.rubber.at.tennis.atp.api.match.req.LiveMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
 import com.rubber.base.components.util.result.ResultMsg;
@@ -17,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author luffyu
@@ -29,6 +35,9 @@ public class WorldMatchQueryController {
     @Resource
     private WorldMatchQueryApi worldMatchQueryApi;
 
+    @Resource
+    private WorldTourQueryApi worldTourQueryApi;
+
 
 
     /**
@@ -36,7 +45,7 @@ public class WorldMatchQueryController {
      */
     @PostMapping("/tour-info")
     public ResultMsg queryTourInfo(@RequestBody WorldTourMatchReq req){
-        return ResultMsg.success(worldMatchQueryApi.queryTourMatchInfo(req));
+        return ResultMsg.success(worldTourQueryApi.queryTourMatchInfo(req));
     }
 
 
@@ -84,9 +93,9 @@ public class WorldMatchQueryController {
      * 查询进行中的比赛详情
      */
     @PostMapping("/living-detail")
-    public ResultMsg getLivingDetail(@RequestBody WorldMatchReq req){
+    public ResultMsg getLivingDetail(@RequestBody LiveMatchReq req){
         // 兼容性查询 后期删掉
-        return ResultMsg.success(worldMatchQueryApi.getLivingDetail(req.getMatchId()));
+        return ResultMsg.success(worldMatchQueryApi.getLivingDetail(req));
     }
 
 

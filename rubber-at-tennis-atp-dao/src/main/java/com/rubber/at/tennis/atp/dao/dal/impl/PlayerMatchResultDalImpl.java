@@ -1,7 +1,7 @@
 package com.rubber.at.tennis.atp.dao.dal.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.rubber.at.tennis.atp.dao.entity.PlayerMatchInfoEntity;
+import com.rubber.at.tennis.atp.api.base.MatchPlayerGroupBean;
 import com.rubber.at.tennis.atp.dao.entity.PlayerMatchResultEntity;
 import com.rubber.at.tennis.atp.dao.mapper.PlayerMatchResultMapper;
 import com.rubber.at.tennis.atp.dao.dal.IPlayerMatchResultDal;
@@ -9,6 +9,7 @@ import com.rubber.base.components.mysql.plugins.admin.BaseAdminService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * <p>
@@ -33,4 +34,31 @@ public class PlayerMatchResultDalImpl extends BaseAdminService<PlayerMatchResult
                 .orderByDesc(PlayerMatchResultEntity::getMatchYear);
         return list(lqw);
     }
+
+    /**
+     * @param playerIds
+     * @param matchName
+     * @return
+     */
+    @Override
+    public List<PlayerMatchResultEntity> queryPlayerMatch(Set<String> playerIds, String matchName) {
+        LambdaQueryWrapper<PlayerMatchResultEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.in(PlayerMatchResultEntity::getPlayerId,playerIds)
+                .eq(PlayerMatchResultEntity::getMatchName,matchName)
+                .orderByDesc(PlayerMatchResultEntity::getMatchYear);
+        return list(lqw);
+    }
+
+    /**
+     * 比赛名称和分组类型 查询
+     *
+     * @param matchName
+     * @return
+     */
+    @Override
+    public List<MatchPlayerGroupBean> queryWinGroupPlayerByMatchName(String matchName) {
+        return this.getBaseMapper().groupMatchResultByPlaye(matchName);
+    }
+
+
 }

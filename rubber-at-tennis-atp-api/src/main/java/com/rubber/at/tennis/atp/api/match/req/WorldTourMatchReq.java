@@ -21,6 +21,11 @@ public class WorldTourMatchReq extends BaseRequestPage {
     private String tourId;
 
 
+    /**
+     * 比赛年份
+     */
+    private String tourYear;
+
 
     /**
      * 更新的版本
@@ -32,4 +37,9 @@ public class WorldTourMatchReq extends BaseRequestPage {
      * 比赛状态
      */
     private List<Integer>statusList;
+
+    /**
+     * 模块信息
+     */
+    private List<String> dataModelList;
 }

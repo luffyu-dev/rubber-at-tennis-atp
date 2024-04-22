@@ -1,10 +1,12 @@
 package com.rubber.at.tennis.atp.api.match.dto;
 
 import com.rubber.at.tennis.atp.api.player.dto.PlayerH2HDto;
+import com.rubber.at.tennis.atp.api.player.dto.PlayerMatchResultDto;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author luffyu
@@ -152,4 +154,12 @@ public class WorldMatchInfo {
      * 比赛数据结果
      */
     private List<MatchResultDataDto> livingDataList;
+
+
+    /**
+     * 球员在历史比赛中的表现情况
+     * key为球员id
+     * value为球员的具体信息
+     */
+    private Map<String, List<PlayerMatchResultDto>> playerHistoryMatchResult;
 }
