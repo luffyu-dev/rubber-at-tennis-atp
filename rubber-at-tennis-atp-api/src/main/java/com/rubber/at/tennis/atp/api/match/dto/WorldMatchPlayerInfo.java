@@ -50,7 +50,7 @@ public class WorldMatchPlayerInfo {
     /**
      * 球员排名
      */
-    private String playerRank;
+    private Integer playerRank;
 
     /**
      * 球员伙伴id

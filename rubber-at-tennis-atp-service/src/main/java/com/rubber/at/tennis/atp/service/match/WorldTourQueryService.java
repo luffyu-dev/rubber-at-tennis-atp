@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.rubber.at.tennis.atp.api.base.MatchPlayerGroupBean;
 import com.rubber.at.tennis.atp.api.match.WorldTourQueryApi;
 import com.rubber.at.tennis.atp.api.match.dto.MatchRoundDto;
+import com.rubber.at.tennis.atp.api.match.dto.NormalDescDto;
 import com.rubber.at.tennis.atp.api.match.dto.PlayerTourMatchDto;
 import com.rubber.at.tennis.atp.api.match.dto.WorldTourMatchTypeDto;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
@@ -78,6 +79,9 @@ public class WorldTourQueryService implements WorldTourQueryApi {
                 dto.setHistoryMatchResult(atpTypeResult);
             }
         }
+        if (StrUtil.isEmpty(dto.getHomeImg())){
+            dto.setHomeImg("https://1305335901.vod2.myqcloud.com/0bba6620vodcq1305335901/aaab00833270835009322259873/mM1vDZmApwYA.jpg");
+        }
 
         return dto;
     }
@@ -129,11 +133,33 @@ public class WorldTourQueryService implements WorldTourQueryApi {
         WorldTourMatchTypeDto dto = new WorldTourMatchTypeDto();
         BeanUtils.copyProperties(entity,dto);
         List<String> dateStr = new ArrayList<>();
-        long betweenDay = DateUtil.betweenDay(entity.getBeginTime(), entity.getEndTime(), true);
+
+        Date endTime = entity.getEndTime();
+
+        if (StrUtil.isNotEmpty(entity.getUpdateVersion())){
+            endTime = DateUtil.parse(entity.getUpdateVersion(),"yyyy-MM-dd");
+        }
+        long betweenDay = DateUtil.betweenDay(entity.getBeginTime(), endTime, true);
+        List<NormalDescDto> dayList = new ArrayList<>();
         for (int i=0;i<=betweenDay;i++){
             Date temp = DateUtil.offsetDay(entity.getBeginTime(),i);
-            dateStr.add(DatePattern.NORM_DATE_FORMAT.format(temp));
+            String key = DatePattern.NORM_DATE_FORMAT.format(temp);
+            dateStr.add(key);
+
+            NormalDescDto descDto = new NormalDescDto();
+            descDto.setKey(key);
+            descDto.setValue(DateUtil.format(temp,"MM月dd日"));
+
+            String desc = "第"+(i+1)+"日";
+            if (StrUtil.isNotEmpty(entity.getTourName()) && entity.getTourName().length() <= 3){
+                desc = entity.getTourName()+desc;
+            }
+            descDto.setDesc(desc);
+            dayList.add(descDto);
         }
+
+        dto.setMatchDayList(dayList);
+
         Date now = new Date();
         if (DateUtil.compare(now,entity.getEndTime()) <=0){
             dto.setDefaultMatchDay(DatePattern.NORM_DATE_FORMAT.format(now));

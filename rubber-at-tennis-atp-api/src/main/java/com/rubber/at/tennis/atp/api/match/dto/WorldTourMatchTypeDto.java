@@ -102,9 +102,15 @@ public class WorldTourMatchTypeDto {
 
 
     /**
-     * 轮次信息
+     * 比赛轮次信息
      */
     private List<MatchRoundDto> matchRoundList;
+
+    /**
+     * 比赛日期信息
+     */
+    private List<NormalDescDto> matchDayList;
+
 
 
     /**

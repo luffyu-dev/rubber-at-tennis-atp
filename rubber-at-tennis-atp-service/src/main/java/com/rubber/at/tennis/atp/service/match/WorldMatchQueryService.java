@@ -17,8 +17,10 @@ import com.rubber.at.tennis.atp.api.match.req.WorldMatchReq;
 import com.rubber.at.tennis.atp.api.match.req.WorldTourMatchReq;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerH2HDto;
 import com.rubber.at.tennis.atp.api.player.dto.PlayerMatchResultDto;
+import com.rubber.at.tennis.atp.api.task.TaskTypeEnums;
 import com.rubber.at.tennis.atp.dao.dal.*;
 import com.rubber.at.tennis.atp.dao.entity.*;
+import com.rubber.at.tennis.atp.service.rank.PlayerRankInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +61,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
 
     @Autowired
     private IPlayerMatchResultDal iPlayerMatchResultDal;
+
+    @Autowired
+    private PlayerRankInfoService playerRankInfoService;
 
 
     /**
@@ -276,12 +281,41 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
         if (req.getDataModelList().contains("matchHistory")) {
             queryMatchHistory(worldMatchInfo);
         }
+        // 查询球员排行
+        queryPlayerRank(worldMatchInfo);
         // 结果处理
         handlerLivingSetData(worldMatchInfo);
-        
+
         return worldMatchInfo;
     }
 
+
+
+    public void queryPlayerRank(WorldMatchInfo worldMatchInfo){
+        if (Integer.valueOf(1).equals(worldMatchInfo.getDoubleFlag())){
+            return;
+        }
+        WorldMatchPlayerInfo aPlayer = worldMatchInfo.getAPlayer();
+        WorldMatchPlayerInfo bPlayer = worldMatchInfo.getBPlayer();
+        if (aPlayer == null || bPlayer == null){
+            return;
+        }
+        TaskTypeEnums taskTypeEnums = TaskTypeEnums.ATP_RANK;
+        if (worldMatchInfo.getMatchGender().contains("女")){
+            taskTypeEnums = TaskTypeEnums.WTA_RANK;
+        }
+        List<String> playerIds = new ArrayList<>(Arrays.asList(aPlayer.getPlayerId(),bPlayer.getPlayerId()));
+        Map<String, PlayerRankInfoEntity> playerRank = playerRankInfoService.queryRankInfo(playerIds, taskTypeEnums);
+
+        PlayerRankInfoEntity aPlayerRank = playerRank.get(aPlayer.getPlayerId());
+        PlayerRankInfoEntity bPlayerRank = playerRank.get(bPlayer.getPlayerId());
+        if (aPlayerRank == null || bPlayerRank == null){
+            return;
+        }
+        aPlayer.setPlayerRank(aPlayerRank.getRank());
+        bPlayer.setPlayerRank(bPlayerRank.getRank());
+
+    }
 
 
 
@@ -556,6 +590,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      * @param worldMatchInfo
      */
     private void queryPlayerH2h(WorldMatchInfo worldMatchInfo){
+        if (Integer.valueOf(1).equals(worldMatchInfo.getDoubleFlag())){
+            return;
+        }
         LambdaQueryWrapper<PlayerHtohInfoEntity> lqw = new LambdaQueryWrapper<>();
         lqw.eq(PlayerHtohInfoEntity::getAPlayerId,worldMatchInfo.getAPlayer().getPlayerId())
                 .eq(PlayerHtohInfoEntity::getBPlayerId,worldMatchInfo.getBPlayer().getPlayerId())
@@ -573,11 +610,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
                 BigDecimal bOdds = new BigDecimal(worldMatchInfo.getBPlayer().getPlayerOdds());
                 BigDecimal allOdds = aOdds.add(bOdds);
 
-                BigDecimal aPointOdds = aOdds.multiply(new BigDecimal(100)).divide(allOdds,2,RoundingMode.HALF_UP);
-                BigDecimal bPointOdds = bOdds.multiply(new BigDecimal(100)).divide(allOdds,2,RoundingMode.HALF_UP);
-
-                dto.setAPlayerWinPoint(aPointOdds+"%");
-                dto.setBPlayerWinPoint(bPointOdds+"%");
+                BigDecimal aPointOdds = bOdds.multiply(new BigDecimal(100)).divide(allOdds,0,RoundingMode.HALF_UP);
+                dto.setAPlayerWinPoint(aPointOdds.intValue()+"%");
+                dto.setBPlayerWinPoint((100-aPointOdds.intValue())+"%");
             }
 
             worldMatchInfo.setH2HDto(dto);
@@ -591,6 +626,7 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      * @param worldMatchInfo
      */
     private void queryMatchLive(WorldMatchInfo worldMatchInfo){
+
         try {
             LambdaQueryWrapper<WorldTennisMatchLivingDataEntity> lqw = new LambdaQueryWrapper<>();
             lqw.eq(WorldTennisMatchLivingDataEntity::getMatchId, worldMatchInfo.getMatchId())
@@ -666,6 +702,9 @@ public class WorldMatchQueryService  implements WorldMatchQueryApi {
      * @param worldMatchInfo
      */
     private void queryMatchHistory(WorldMatchInfo worldMatchInfo){
+        if (Integer.valueOf(1).equals(worldMatchInfo.getDoubleFlag())){
+            return;
+        }
         Set<String> playerIds = new HashSet<>();
         playerIds.add(worldMatchInfo.getAPlayer().getPlayerId());
         playerIds.add(worldMatchInfo.getBPlayer().getPlayerId());
