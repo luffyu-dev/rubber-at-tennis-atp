@@ -205,12 +205,14 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
                     .or()
                     .like(PlayerInfoEntity::getNationChineseName, "%" + request.getSearchValue() + "%");
         }
-        if (playerTypeEnums != null){
-            lqw.eq(PlayerInfoEntity::getPlayerType,playerTypeEnums.toString());
-        }
         if ("recommendScore".equalsIgnoreCase(request.getSeqType())){
-            lqw.orderByDesc(PlayerInfoEntity::getRecommendScore);
+            lqw.gt(PlayerInfoEntity::getRecommendScore,0);
+            lqw.orderByDesc(PlayerInfoEntity::getRecommendScore)
+                    .orderByDesc(PlayerInfoEntity::getSeqWeight);
         }else {
+            if (playerTypeEnums != null){
+                lqw.eq(PlayerInfoEntity::getPlayerType,playerTypeEnums.toString());
+            }
             lqw.orderByDesc(PlayerInfoEntity::getSeqWeight);
         }
         iPlayerInfoDal.page(page,lqw);
@@ -262,7 +264,9 @@ public class PlayerInfoQueryService implements PlayerInfoQueryApi {
     private PlayerInfoDto convertDto(PlayerInfoEntity playerInfo,PlayerRankInfoEntity rankInfo){
         PlayerInfoDto dto = new PlayerInfoDto();
         BeanUtils.copyProperties(playerInfo,dto);
-
+        if (StrUtil.isEmpty(dto.getBirthday())){
+            dto.setBirthday("-");
+        }
         if (playerInfo.getLastMatchTime() != null){
             long day = DateUtil.betweenDay(new Date(),playerInfo.getLastMatchTime(),true);
             if ( day > -15 && day < 15){
